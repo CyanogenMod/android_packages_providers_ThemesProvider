@@ -28,7 +28,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 3;
+    private static final int DATABASE_VERSION = 4;
     private static final String DATABASE_NAME = "themes.db";
     private static final String DEFAULT_PKG_NAME = "default";
 
@@ -57,6 +57,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 upgradeToVersion3(db);
                 oldVersion = 3;
             }
+            if (oldVersion == 3) {
+                upgradeToVersion4(db);
+                oldVersion = 4;
+            }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
                 dropTables(db);
@@ -83,6 +87,13 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         values.put(MixnMatchColumns.COL_KEY, ThemesContract.MixnMatchColumns.KEY_ALARM);
         values.put(MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME);
         db.insert(MixnMatchTable.TABLE_NAME, null, values);
+    }
+
+    private void upgradeToVersion4(SQLiteDatabase db) {
+        String isLegacyIconPackColumn = String.format("ALTER TABLE %s" +
+                " ADD COLUMN %s INTEGER DEFAULT 0",
+                ThemesTable.TABLE_NAME, ThemesColumns.IS_LEGACY_ICONPACK);
+        db.execSQL(isLegacyIconPackColumn);
     }
 
     private void dropTables(SQLiteDatabase db) {
@@ -121,6 +132,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         ThemesColumns.MODIFIES_OVERLAYS + " INTEGER DEFAULT 0, " +
                         ThemesColumns.PRESENT_AS_THEME + " INTEGER DEFAULT 0, " +
                         ThemesColumns.IS_LEGACY_THEME + " INTEGER DEFAULT 0," +
+                        ThemesColumns.IS_LEGACY_ICONPACK + " INTEGER DEFAULT 0," +
                         ThemesColumns.LAST_UPDATE_TIME + " INTEGER DEFAULT 0" +
                         ")";
 
@@ -146,6 +158,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.MODIFIES_RINGTONES, 1);
             values.put(ThemesColumns.PRESENT_AS_THEME, 1);
             values.put(ThemesColumns.IS_LEGACY_THEME, 0);
+            values.put(ThemesColumns.IS_LEGACY_ICONPACK, 0);
             values.put(ThemesColumns.MODIFIES_OVERLAYS, 1);
             db.insert(TABLE_NAME, null, values);
         }
