@@ -20,6 +20,7 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.ThemesContract;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.MixnMatchColumns;
 import android.util.Log;
@@ -27,7 +28,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 3;
     private static final String DATABASE_NAME = "themes.db";
     private static final String DEFAULT_PKG_NAME = "default";
 
@@ -52,6 +53,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 upgradeToVersion2(db);
                 oldVersion = 2;
             }
+            if (oldVersion == 2) {
+                upgradeToVersion3(db);
+                oldVersion = 3;
+            }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
                 dropTables(db);
@@ -70,6 +75,14 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         String addStyleColumn = String.format("ALTER TABLE %s ADD COLUMN %s TEXT",
                 ThemesTable.TABLE_NAME, ThemesColumns.STYLE_URI);
         db.execSQL(addStyleColumn);
+    }
+
+    private void upgradeToVersion3(SQLiteDatabase db) {
+        // Add default value to mixnmatch for KEY_ALARM
+        ContentValues values = new ContentValues();
+        values.put(MixnMatchColumns.COL_KEY, ThemesContract.MixnMatchColumns.KEY_ALARM);
+        values.put(MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME);
+        db.insert(MixnMatchTable.TABLE_NAME, null, values);
     }
 
     private void dropTables(SQLiteDatabase db) {
