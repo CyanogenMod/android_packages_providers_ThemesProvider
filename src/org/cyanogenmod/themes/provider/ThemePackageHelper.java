@@ -208,7 +208,8 @@ public class ThemePackageHelper {
         try {
             themeContext = context.createPackageContext(pkgName, Context.CONTEXT_IGNORE_SECURITY);
         } catch (NameNotFoundException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error getting themeContext during insert", e);
+            return Collections.emptyMap();
         }
 
         // Determine what components the theme implements.
