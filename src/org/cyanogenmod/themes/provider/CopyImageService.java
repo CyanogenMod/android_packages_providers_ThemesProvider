@@ -99,7 +99,8 @@ public class CopyImageService extends IntentService {
             themeContext = context.createPackageContext(pkgName,
                     Context.CONTEXT_IGNORE_SECURITY);
         } catch (NameNotFoundException e) {
-            e.printStackTrace();
+            Log.e(TAG, "Error getting themeContext", e);
+            return;
         }
 
         // This is for testing only. We copy some assets from APK and put into
