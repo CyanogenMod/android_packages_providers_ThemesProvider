@@ -39,6 +39,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import static android.content.res.CustomTheme.HOLO_DEFAULT;
+
 /**
  * Helper class to populate the provider with info from the theme.
  */
@@ -155,14 +157,18 @@ public class ThemePackageHelper {
     }
 
     public static void updatePackage(Context context, String pkgName) throws NameNotFoundException {
-        PackageInfo pi = context.getPackageManager().getPackageInfo(pkgName, 0);
-        Map<String, Boolean> capabilities = getCapabilities(context, pkgName);
-        if (pi.themeInfos != null && pi.themeInfos.length > 0) {
-            updatePackageInternal(context, pi, capabilities);
-        } else if (pi.legacyThemeInfos != null && pi.legacyThemeInfos.length > 0) {
-            updateLegacyPackageInternal(context, pi, capabilities);
-        } else if (pi.isLegacyIconPackApk) {
-            updateLegacyIconPackInternal(context, pi, capabilities);
+        if (HOLO_DEFAULT.equals(pkgName)) {
+            updateHoloPackageInternal(context);
+        } else {
+            PackageInfo pi = context.getPackageManager().getPackageInfo(pkgName, 0);
+            Map<String, Boolean> capabilities = getCapabilities(context, pkgName);
+            if (pi.themeInfos != null && pi.themeInfos.length > 0) {
+                updatePackageInternal(context, pi, capabilities);
+            } else if (pi.legacyThemeInfos != null && pi.legacyThemeInfos.length > 0) {
+                updateLegacyPackageInternal(context, pi, capabilities);
+            } else if (pi.isLegacyIconPackApk) {
+                updateLegacyIconPackInternal(context, pi, capabilities);
+            }
         }
     }
 
@@ -183,6 +189,15 @@ public class ThemePackageHelper {
 
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
+        context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
+    }
+
+    private static void updateHoloPackageInternal(Context context) {
+        ContentValues values = new ContentValues();
+        values.put(ThemesColumns.IS_DEFAULT_THEME,
+                HOLO_DEFAULT == ThemeUtils.getDefaultThemePackageName(context) ? 1 : 0);
+        String where = ThemesColumns.PKG_NAME + "=?";
+        String[] args = { HOLO_DEFAULT };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
     }
 
