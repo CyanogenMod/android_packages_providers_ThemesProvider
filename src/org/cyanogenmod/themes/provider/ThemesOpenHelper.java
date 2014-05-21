@@ -17,9 +17,12 @@ package org.cyanogenmod.themes.provider;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.pm.ThemeUtils;
+import android.content.res.CustomTheme;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.provider.ThemesContract;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.MixnMatchColumns;
 import android.util.Log;
@@ -27,12 +30,15 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 2;
+    private static final int DATABASE_VERSION = 5;
     private static final String DATABASE_NAME = "themes.db";
-    private static final String DEFAULT_PKG_NAME = "default";
+    private static final String DEFAULT_PKG_NAME = CustomTheme.HOLO_DEFAULT;
+
+    private Context mContext;
 
     public ThemesOpenHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        mContext = context;
     }
 
     @Override
@@ -40,7 +46,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         db.execSQL(ThemesTable.THEMES_TABLE_CREATE);
         db.execSQL(MixnMatchTable.MIXNMATCH_TABLE_CREATE);
 
-        ThemesTable.insertDefaults(db);
+        ThemesTable.insertHoloDefaults(db, mContext);
         MixnMatchTable.insertDefaults(db);
     }
 
@@ -51,6 +57,18 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 1) {
                 upgradeToVersion2(db);
                 oldVersion = 2;
+            }
+            if (oldVersion == 2) {
+                upgradeToVersion3(db);
+                oldVersion = 3;
+            }
+            if (oldVersion == 3) {
+                upgradeToVersion4(db);
+                oldVersion = 4;
+            }
+            if (oldVersion == 4) {
+                upgradeToVersion5(db);
+                oldVersion = 5;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -70,6 +88,46 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         String addStyleColumn = String.format("ALTER TABLE %s ADD COLUMN %s TEXT",
                 ThemesTable.TABLE_NAME, ThemesColumns.STYLE_URI);
         db.execSQL(addStyleColumn);
+    }
+
+    private void upgradeToVersion3(SQLiteDatabase db) {
+        // Add default value to mixnmatch for KEY_ALARM
+        ContentValues values = new ContentValues();
+        values.put(MixnMatchColumns.COL_KEY, ThemesContract.MixnMatchColumns.KEY_ALARM);
+        values.put(MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME);
+        db.insert(MixnMatchTable.TABLE_NAME, null, values);
+    }
+
+    private void upgradeToVersion4(SQLiteDatabase db) {
+        String isLegacyIconPackColumn = String.format("ALTER TABLE %s" +
+                        " ADD COLUMN %s INTEGER DEFAULT 0",
+                ThemesTable.TABLE_NAME, ThemesColumns.IS_LEGACY_ICONPACK);
+        db.execSQL(isLegacyIconPackColumn);
+    }
+
+    private void upgradeToVersion5(SQLiteDatabase db) {
+        String addIsDefault = String.format("ALTER TABLE %s ADD COLUMN %s TEXT",
+                ThemesTable.TABLE_NAME, ThemesColumns.IS_DEFAULT_THEME);
+        db.execSQL(addIsDefault);
+
+        // change default package name to holo
+        String changeDefaultToHolo = String.format("UPDATE %s SET %s='%s' WHERE" +
+                        " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.PKG_NAME,
+                DEFAULT_PKG_NAME, ThemesColumns.PKG_NAME, "default");
+        db.execSQL(changeDefaultToHolo);
+
+        if (isHoloDefault(mContext)) {
+            // flag holo as default if
+            String makeHoloDefault = String.format("UPDATE %s SET %s=%d WHERE" +
+                            " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.IS_DEFAULT_THEME, 1,
+                    ThemesColumns.PKG_NAME, DEFAULT_PKG_NAME);
+            db.execSQL(makeHoloDefault);
+        }
+
+        // change any existing mixnmatch values set to "default" to "holo"
+        db.execSQL(String.format("UPDATE %s SET %s='%s' WHERE %s='%s'",
+                MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME,
+                MixnMatchColumns.COL_VALUE, "default"));
     }
 
     private void dropTables(SQLiteDatabase db) {
@@ -108,10 +166,13 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         ThemesColumns.MODIFIES_OVERLAYS + " INTEGER DEFAULT 0, " +
                         ThemesColumns.PRESENT_AS_THEME + " INTEGER DEFAULT 0, " +
                         ThemesColumns.IS_LEGACY_THEME + " INTEGER DEFAULT 0," +
+                        ThemesColumns.IS_DEFAULT_THEME + " INTEGER DEFAULT 0," +
+                        ThemesColumns.IS_LEGACY_ICONPACK + " INTEGER DEFAULT 0," +
                         ThemesColumns.LAST_UPDATE_TIME + " INTEGER DEFAULT 0" +
                         ")";
 
-        public static void insertDefaults(SQLiteDatabase db) {
+        public static void insertHoloDefaults(SQLiteDatabase db, Context context) {
+            int isDefault = isHoloDefault(context) ? 1 : 0;
             ContentValues values = new ContentValues();
             values.put(ThemesColumns.TITLE, "Holo (Default)");
             values.put(ThemesColumns.PKG_NAME, DEFAULT_PKG_NAME);
@@ -133,6 +194,8 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.MODIFIES_RINGTONES, 1);
             values.put(ThemesColumns.PRESENT_AS_THEME, 1);
             values.put(ThemesColumns.IS_LEGACY_THEME, 0);
+            values.put(ThemesColumns.IS_DEFAULT_THEME, isDefault);
+            values.put(ThemesColumns.IS_LEGACY_ICONPACK, 0);
             values.put(ThemesColumns.MODIFIES_OVERLAYS, 1);
             db.insert(TABLE_NAME, null, values);
         }
@@ -154,6 +217,11 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 db.insert(TABLE_NAME, null, values);
             }
         }
+    }
+
+    private static boolean isHoloDefault(Context context) {
+        // == is okay since we are checking if what is returned is the same constant string value
+        return CustomTheme.HOLO_DEFAULT == ThemeUtils.getDefaultThemePackageName(context);
     }
 }
 

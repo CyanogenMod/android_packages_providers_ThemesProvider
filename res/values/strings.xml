@@ -18,4 +18,6 @@
 
     <string name="app_name">Themes Provider</string>
 
+    <!-- For when an "legacy" icon pack does not have an app name -->
+    <string name="unknown_app_name">Unknown</string>
 </resources>
