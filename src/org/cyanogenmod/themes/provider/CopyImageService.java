@@ -22,6 +22,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.AssetManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.ThemesContract.ThemesColumns;
@@ -45,6 +46,13 @@ public class CopyImageService extends IntentService {
     private static final String WALLPAPER_PATH =
             "/data/org.cyanogenmod.themes.provider/files/wallpapers/";
 
+    private static final String WALLPAPER_PREVIEW = "images/wallpaper_preview";
+    private static final String LOCKSCREEN_PREVIEW = "images/lockscreen_preview";
+    private static final String STYLES_PREVIEW = "images/styles_preview";
+
+    private static final String EXT_JPG = ".jpg";
+    private static final String EXT_PNG = ".png";
+
     public CopyImageService() {
         super(CopyImageService.class.getName());
     }
@@ -63,10 +71,10 @@ public class CopyImageService extends IntentService {
 
         String homescreen = Environment.getDataDirectory().getPath()
                 + IMAGES_PATH + pkgName
-                + ".homescreen.png";
+                + ".homescreen.jpg";
         String lockscreen = Environment.getDataDirectory().getPath()
                 + IMAGES_PATH + pkgName
-                + ".lockscreen.png";
+                + ".lockscreen.jpg";
         String stylePreview = Environment.getDataDirectory().getPath()
                 + IMAGES_PATH + pkgName
                 + ".stylepreview.jpg";
@@ -106,10 +114,9 @@ public class CopyImageService extends IntentService {
         // internal storage
         AssetManager assetManager = themeContext.getAssets();
         try {
-            InputStream homescreen = assetManager
-                    .open("images/icons_wallpaper_straight.png");
-            InputStream lockscreen = assetManager
-                    .open("images/lockscreen_portrait.png");
+            InputStream homescreen = getPreviewAsset(assetManager, WALLPAPER_PREVIEW);
+
+            InputStream lockscreen = getPreviewAsset(assetManager, LOCKSCREEN_PREVIEW);
 
             File dataDir = context.getFilesDir(); // Environment.getDataDirectory();
             File imgDir = new File(dataDir, "images");
@@ -117,45 +124,49 @@ public class CopyImageService extends IntentService {
             imgDir.mkdir();
             wpDir.mkdir();
 
-            File homescreenOut = new File(imgDir, pkgName + ".homescreen.png");
-            File lockscreenOut = new File(imgDir, pkgName + ".lockscreen.png");
+            File homescreenOut = new File(imgDir, pkgName + ".homescreen.jpg");
+            File lockscreenOut = new File(imgDir, pkgName + ".lockscreen.jpg");
 
             FileOutputStream out = new FileOutputStream(homescreenOut);
-            byte[] buffer = new byte[4096];
-            int count = 0;
-            while ((count = homescreen.read(buffer)) != -1) {
-                out.write(buffer, 0, count);
-            }
+            Bitmap bmp = BitmapUtils.loadBitmapWithBackouts(context, homescreen, 1);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.close();
 
             out = new FileOutputStream(lockscreenOut);
-            while ((count = lockscreen.read(buffer)) != -1) {
-                out.write(buffer, 0, count);
-            }
+            bmp = BitmapUtils.loadBitmapWithBackouts(context, lockscreen, 1);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.close();
         } catch (IOException e) {
-            Log.e(TAG, "ThemesOpenHelper could not copy test image data");
+            Log.e(TAG, "ThemesOpenHelper could not copy preview image");
         }
 
         //Copy Style preview
         try {
-            InputStream stylepreview = assetManager
-                    .open("images/style.jpg");
+            InputStream stylepreview = getPreviewAsset(assetManager, STYLES_PREVIEW);
             File dataDir = context.getFilesDir();
             File imgDir = new File(dataDir, "images");
             imgDir.mkdir();
 
             File styleOut = new File(imgDir, pkgName + ".stylepreview.jpg");
 
-            byte[] buffer = new byte[4096];
-            int count = 0;
             FileOutputStream out = new FileOutputStream(styleOut);
-            while ((count = stylepreview.read(buffer)) != -1) {
-                out.write(buffer, 0, count);
-            }
+            Bitmap bmp = BitmapUtils.loadBitmapWithBackouts(context, stylepreview, 1);
+            bmp.compress(Bitmap.CompressFormat.JPEG, 90, out);
             out.close();
         } catch (IOException e) {
             Log.e(TAG, "ThemesOpenHelper could not copy style image data");
         }
+    }
+
+    private static InputStream getPreviewAsset(AssetManager am, String preview) throws IOException {
+        InputStream is = null;
+        try {
+            is = am.open(preview + EXT_JPG);
+        } catch (IOException e) {
+            // we'll try and fallback to PNG
+        }
+        if (is == null) is = am.open(preview + EXT_PNG);
+
+        return is;
     }
 }
