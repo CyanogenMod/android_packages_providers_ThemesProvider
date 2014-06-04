@@ -37,7 +37,8 @@ import java.io.InputStream;
  * Copies images from the theme APK to the local provider's cache
  */
 public class CopyImageService extends IntentService {
-
+    public static final String ACTION_INSERT = "org.cyanogenmod.themes.provider.action.insert";
+    public static final String ACTION_DELETE = "org.cyanogenmod.themes.provider.action.delete";
     public static final String EXTRA_PKG_NAME = "extra_pkg_name";
 
     private static final String TAG = CopyImageService.class.getName();
@@ -59,47 +60,21 @@ public class CopyImageService extends IntentService {
 
     @Override
     protected void onHandleIntent(Intent intent) {
-
-        if (intent.getExtras() == null)
+        if (intent.getExtras() == null || intent.getExtras().getString(EXTRA_PKG_NAME) == null) {
+            Log.e(TAG, "No package name or extras provided");
             return;
-
-        String pkgName = intent.getExtras().getString(EXTRA_PKG_NAME);
-
-        if (pkgName != null) {
-            generate(this, pkgName);
         }
 
-        String homescreen = Environment.getDataDirectory().getPath()
-                + IMAGES_PATH + pkgName
-                + ".homescreen.jpg";
-        String lockscreen = Environment.getDataDirectory().getPath()
-                + IMAGES_PATH + pkgName
-                + ".lockscreen.jpg";
-        String stylePreview = Environment.getDataDirectory().getPath()
-                + IMAGES_PATH + pkgName
-                + ".stylepreview.jpg";
-        String wallpaper = ContentResolver.SCHEME_FILE + "://" + Environment.getDataDirectory().getPath()
-                + WALLPAPER_PATH + pkgName
-                + ".wallpaper1.jpg";
-        Uri hsUri = Uri.parse(homescreen);
-        Uri lsUri = Uri.parse(lockscreen);
-        Uri wpUri = Uri.parse(wallpaper);
-        Uri styleUri = Uri.parse(stylePreview);
-
-        String where = ThemesColumns.PKG_NAME + "=?";
-        String[] selectionArgs = { pkgName };
-
-        ContentValues values = new ContentValues();
-        values.put(ThemesColumns.HOMESCREEN_URI, hsUri.toString());
-        values.put(ThemesColumns.LOCKSCREEN_URI, lsUri.toString());
-        values.put(ThemesColumns.STYLE_URI, styleUri.toString());
-        values.put(ThemesColumns.WALLPAPER_URI, "file:///android_asset/wallpapers/wallpaper1.jpg");
-
-        getContentResolver().update(ThemesColumns.CONTENT_URI, values,
-                where, selectionArgs);
+        String pkgName = intent.getExtras().getString(EXTRA_PKG_NAME);
+        if (ACTION_INSERT.equals(intent.getAction())) {
+            createPreviewImages(this, pkgName);
+            insertPreviewValuesIntoDb(pkgName);
+        } else if (ACTION_DELETE.equals(intent.getAction())) {
+            deletePreviewImages(pkgName);
+        }
     }
 
-    public static void generate(Context context, String pkgName) {
+    public static void createPreviewImages(Context context, String pkgName) {
         // Presently this is just mocked up. IE We expect the theme APK to
         // provide the bitmap.
         Context themeContext = null;
@@ -157,6 +132,69 @@ public class CopyImageService extends IntentService {
         } catch (IOException e) {
             Log.e(TAG, "ThemesOpenHelper could not copy style image data");
         }
+    }
+
+    private void insertPreviewValuesIntoDb(String pkgName) {
+        String homescreen = getHomeScreenPreviewPath(pkgName);
+        String lockscreen = getLockScreenPreviewPath(pkgName);
+        String stylePreview = getStylesPreviewPath(pkgName);
+        String wallpaper = getWallpaperPreviewPath(pkgName);
+
+        Uri hsUri = Uri.parse(homescreen);
+        Uri lsUri = Uri.parse(lockscreen);
+        Uri wpUri = Uri.parse(wallpaper);
+        Uri styleUri = Uri.parse(stylePreview);
+
+        String where = ThemesColumns.PKG_NAME + "=?";
+        String[] selectionArgs = { pkgName };
+
+        ContentValues values = new ContentValues();
+        values.put(ThemesColumns.HOMESCREEN_URI, hsUri.toString());
+        values.put(ThemesColumns.LOCKSCREEN_URI, lsUri.toString());
+        values.put(ThemesColumns.STYLE_URI, styleUri.toString());
+        values.put(ThemesColumns.WALLPAPER_URI, "file:///android_asset/wallpapers/wallpaper1.jpg");
+
+        getContentResolver().update(ThemesColumns.CONTENT_URI, values,
+                where, selectionArgs);
+    }
+
+    private void deletePreviewImages(String pkgName) {
+        File home = new File(getHomeScreenPreviewPath(pkgName));
+        home.delete();
+
+        File lockscreen = new File(getLockScreenPreviewPath(pkgName));
+        lockscreen.delete();
+
+        File style = new File(getStylesPreviewPath(pkgName));
+        style.delete();
+
+        File wallpaper = new File(getWallpaperPreviewPath(pkgName));
+        wallpaper.delete();
+    }
+
+    private static String getHomeScreenPreviewPath(String pkgName) {
+        return Environment.getDataDirectory().getPath()
+                + IMAGES_PATH + pkgName
+                + ".homescreen.jpg";
+    }
+
+    private static String getLockScreenPreviewPath(String pkgName) {
+        return Environment.getDataDirectory().getPath()
+                + IMAGES_PATH + pkgName
+                + ".lockscreen.jpg";
+    }
+
+    private static String getStylesPreviewPath(String pkgName) {
+        return Environment.getDataDirectory().getPath()
+                + IMAGES_PATH + pkgName
+                + ".stylepreview.jpg";
+    }
+
+    private static String getWallpaperPreviewPath(String pkgName) {
+        return ContentResolver.SCHEME_FILE + "://"
+                + Environment.getDataDirectory().getPath()
+                + WALLPAPER_PATH + pkgName
+                + ".wallpaper1.jpg";
     }
 
     private static InputStream getPreviewAsset(AssetManager am, String preview) throws IOException {

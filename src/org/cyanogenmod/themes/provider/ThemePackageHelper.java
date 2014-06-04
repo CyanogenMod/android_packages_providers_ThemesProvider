@@ -240,7 +240,7 @@ public class ThemePackageHelper {
 
     public static void removePackage(Context context, String pkgToRemove) {
         // Check currently applied components (fonts, wallpapers etc) and verify the theme is still
-        // installed if it is not installed, we need to set the component back to the default theme
+        // installed. If it is not installed, we need to set the component back to the default theme
         List<String> moveToDefault = new LinkedList<String>(); // components to move back to default
         Cursor mixnmatch = context.getContentResolver().query(MixnMatchColumns.CONTENT_URI, null,
                 null, null, null);

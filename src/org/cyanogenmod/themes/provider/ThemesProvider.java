@@ -89,6 +89,21 @@ public class ThemesProvider extends ContentProvider {
         switch (match) {
         case THEMES:
             SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
+
+            // Determine the pkg name and delete preview images
+            String[] columns = new String[] {ThemesColumns.PKG_NAME};
+            Cursor c = sqlDB.query(ThemesTable.TABLE_NAME, columns, selection,
+                    selectionArgs, null, null, null);
+            if (c == null) return 0;
+            if (c.moveToFirst()) {
+                String pkgName = c.getString(0);
+                Intent intent = new Intent(getContext(), CopyImageService.class);
+                intent.setAction(CopyImageService.ACTION_DELETE);
+                intent.putExtra(CopyImageService.EXTRA_PKG_NAME, pkgName);
+                getContext().startService(intent);
+            }
+            c.close();
+
             int rowsDeleted = sqlDB.delete(ThemesTable.TABLE_NAME, selection, selectionArgs);
             getContext().getContentResolver().notifyChange(uri, null);
             return rowsDeleted;
@@ -124,6 +139,7 @@ public class ThemesProvider extends ContentProvider {
         case THEMES:
             id = sqlDB.insert(ThemesOpenHelper.ThemesTable.TABLE_NAME, null, values);
             Intent intent = new Intent(getContext(), CopyImageService.class);
+            intent.setAction(CopyImageService.ACTION_INSERT);
             intent.putExtra(CopyImageService.EXTRA_PKG_NAME,
                     values.getAsString(ThemesColumns.PKG_NAME));
             getContext().startService(intent);
