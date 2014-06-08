@@ -19,7 +19,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.database.Cursor;
 import android.net.Uri;
+import android.provider.ThemesContract;
 import android.util.Log;
 
 public class AppReceiver extends BroadcastReceiver {
@@ -37,10 +39,30 @@ public class AppReceiver extends BroadcastReceiver {
             } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_BEING_REMOVED)) {
                 ThemePackageHelper.removePackage(context, pkgName);
             } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_REPLACED)) {
-                ThemePackageHelper.updatePackage(context, pkgName);
+                if (themeExistsInProvider(context, pkgName)) {
+                    ThemePackageHelper.updatePackage(context, pkgName);
+                } else {
+                    // Edge case where app was not a theme in previous install
+                    ThemePackageHelper.insertPackage(context, pkgName);
+                }
             }
         } catch(NameNotFoundException e) {
             Log.e(TAG, "Unable to add package to theme's provider ", e);
         }
+    }
+
+    private static boolean themeExistsInProvider(Context context, String pkgName) {
+        boolean exists = false;
+        String[] projection = new String[] { ThemesContract.ThemesColumns.PKG_NAME };
+        String selection = ThemesContract.ThemesColumns.PKG_NAME + "?";
+        String[] selectionArgs = new String[] { pkgName };
+        Cursor c = context.getContentResolver().query(ThemesContract.ThemesColumns.CONTENT_URI,
+                projection, selection, selectionArgs, null);
+
+        if (c != null) {
+            exists = c.getCount() >= 1;
+            c.close();
+        }
+        return exists;
     }
 }
