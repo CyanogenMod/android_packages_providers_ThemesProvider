@@ -54,7 +54,7 @@ public class AppReceiver extends BroadcastReceiver {
     private static boolean themeExistsInProvider(Context context, String pkgName) {
         boolean exists = false;
         String[] projection = new String[] { ThemesContract.ThemesColumns.PKG_NAME };
-        String selection = ThemesContract.ThemesColumns.PKG_NAME + "?";
+        String selection = ThemesContract.ThemesColumns.PKG_NAME + "=?";
         String[] selectionArgs = new String[] { pkgName };
         Cursor c = context.getContentResolver().query(ThemesContract.ThemesColumns.CONTENT_URI,
                 projection, selection, selectionArgs, null);
