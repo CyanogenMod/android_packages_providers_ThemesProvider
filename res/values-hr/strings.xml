@@ -17,4 +17,5 @@
 -->
 <resources>
   <string name="app_name">Pružatelj tema</string>
+  <string name="unknown_app_name">Nepoznato</string>
 </resources>

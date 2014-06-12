@@ -17,4 +17,5 @@
 -->
 <resources>
   <string name="app_name">Temaleverantör</string>
+  <string name="unknown_app_name">Okänt</string>
 </resources>
