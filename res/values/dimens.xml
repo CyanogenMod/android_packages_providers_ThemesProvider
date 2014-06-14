@@ -15,11 +15,13 @@
      limitations under the License.
 -->
 <resources>
+    <dimen name="wallpaper_preview_size">240dp</dimen>
+    <dimen name="wallpaper_thumbnail_size">48dp</dimen>
 
-    <string name="app_name">Themes Provider</string>
+    <!-- Dimensions for boot animation preview -->
+    <dimen name="boot_animation_preview_width">80dp</dimen>
+    <dimen name="boot_animation_preview_height">142dp</dimen>
 
-    <!-- For when an "legacy" icon pack does not have an app name -->
-    <string name="unknown_app_name">Unknown</string>
-
-    <string name="controls_preview_button_text">Normal</string>
+    <dimen name="status_bar_battery_height">16dp</dimen>
+    <dimen name="status_bar_battery_width">10.5dp</dimen>
 </resources>

@@ -39,9 +39,10 @@ public class AppReceiver extends BroadcastReceiver {
         final String action = intent.getAction();
         try {
             if (Intent.ACTION_PACKAGE_ADDED.equals(action) && !isReplacing) {
-                if (!isThemeBeingProcessed(context, pkgName)) {
-                    ThemePackageHelper.insertPackage(context, pkgName);
-                } else {
+                final boolean themeProcessing = isThemeBeingProcessed(context, pkgName);
+                ThemePackageHelper.insertPackage(context, pkgName, !themeProcessing);
+
+                if (themeProcessing) {
                     // store this package name so we know it's being processed and it can be
                     // added to the DB when ACTION_THEME_RESOURCES_CACHED is received
                     PreferenceUtils.addThemeBeingProcessed(context, pkgName);
@@ -49,17 +50,18 @@ public class AppReceiver extends BroadcastReceiver {
             } else if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)) {
                 ThemePackageHelper.removePackage(context, pkgName);
             } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
-                if (!isThemeBeingProcessed(context, pkgName)) {
-                    if (themeExistsInProvider(context, pkgName)) {
-                        ThemePackageHelper.updatePackage(context, pkgName);
-                    } else {
-                        // Edge case where app was not a theme in previous install
-                        ThemePackageHelper.insertPackage(context, pkgName);
-                    }
+                final boolean themeProcessing = isThemeBeingProcessed(context, pkgName);
+                if (themeExistsInProvider(context, pkgName)) {
+                    ThemePackageHelper.updatePackage(context, pkgName);
                 } else {
-                    // store this package name so we know it's being processed and it can be
-                    // added to the DB when ACTION_THEME_RESOURCES_CACHED is received
-                    PreferenceUtils.addThemeBeingProcessed(context, pkgName);
+                    // Edge case where app was not a theme in previous install
+                    ThemePackageHelper.insertPackage(context, pkgName, !themeProcessing);
+
+                    if (themeProcessing) {
+                        // store this package name so we know it's being processed and it can be
+                        // added or updated when ACTION_THEME_RESOURCES_CACHED is received
+                        PreferenceUtils.addThemeBeingProcessed(context, pkgName);
+                    }
                 }
             } else if (Intent.ACTION_THEME_RESOURCES_CACHED.equals(action)) {
                 final String themePkgName = intent.getStringExtra(Intent.EXTRA_THEME_PACKAGE_NAME);
@@ -73,7 +75,7 @@ public class AppReceiver extends BroadcastReceiver {
                         ThemePackageHelper.updatePackage(context, themePkgName);
                     } else {
                         // Edge case where app was not a theme in previous install
-                        ThemePackageHelper.insertPackage(context, themePkgName);
+                        ThemePackageHelper.insertPackage(context, themePkgName, true);
                     }
                 }
             }

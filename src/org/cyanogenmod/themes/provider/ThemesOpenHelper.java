@@ -17,22 +17,27 @@ package org.cyanogenmod.themes.provider;
 
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.content.pm.ThemeUtils;
 import android.content.res.ThemeConfig;
+import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.provider.ThemesContract;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.MixnMatchColumns;
+import android.provider.ThemesContract.PreviewColumns;
 import android.util.Log;
 
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 5;
+    private static final int DATABASE_VERSION = 11;
     private static final String DATABASE_NAME = "themes.db";
-    private static final String DEFAULT_PKG_NAME = ThemeConfig.HOLO_DEFAULT;
+    private static final String DEFAULT_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
 
     private Context mContext;
 
@@ -45,9 +50,11 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db) {
         db.execSQL(ThemesTable.THEMES_TABLE_CREATE);
         db.execSQL(MixnMatchTable.MIXNMATCH_TABLE_CREATE);
+        db.execSQL(PreviewsTable.PREVIEWS_TABLE_CREATE);
 
-        ThemesTable.insertHoloDefaults(db, mContext);
+        ThemesTable.insertSystemDefaults(db, mContext);
         MixnMatchTable.insertDefaults(db);
+        PreviewsTable.insertDefaults(mContext);
     }
 
     @Override
@@ -69,6 +76,30 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 4) {
                 upgradeToVersion5(db);
                 oldVersion = 5;
+            }
+            if (oldVersion == 5) {
+                upgradeToVersion6(db);
+                oldVersion = 6;
+            }
+            if (oldVersion == 6) {
+                upgradeToVersion7(db);
+                oldVersion = 7;
+            }
+            if (oldVersion == 7) {
+                upgradeToVersion8(db);
+                oldVersion = 8;
+            }
+            if (oldVersion == 8) {
+                upgradeToVersion9(db);
+                oldVersion = 9;
+            }
+            if (oldVersion == 9) {
+                upgradeToVersion10(db);
+                oldVersion = 10;
+            }
+            if (oldVersion == 10) {
+                upgradeToVersion11(db);
+                oldVersion = 11;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -111,12 +142,12 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         db.execSQL(addIsDefault);
 
         // change default package name to holo
-        String changeDefaultToHolo = String.format("UPDATE %s SET %s='%s' WHERE" +
+        String changeDefaultToSystem = String.format("UPDATE %s SET %s='%s' WHERE" +
                         " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.PKG_NAME,
                 DEFAULT_PKG_NAME, ThemesColumns.PKG_NAME, "default");
-        db.execSQL(changeDefaultToHolo);
+        db.execSQL(changeDefaultToSystem);
 
-        if (isHoloDefault(mContext)) {
+        if (isSystemDefault(mContext)) {
             // flag holo as default if
             String makeHoloDefault = String.format("UPDATE %s SET %s=%d WHERE" +
                             " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.IS_DEFAULT_THEME, 1,
@@ -130,9 +161,204 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 MixnMatchColumns.COL_VALUE, "default"));
     }
 
+    private void upgradeToVersion6(SQLiteDatabase db) {
+        db.execSQL(PreviewsTable.PREVIEWS_TABLE_CREATE);
+
+        // remove (Default) from Holo's title
+        db.execSQL(String.format("UPDATE %s SET %s='%s' WHERE %s='%s'", ThemesTable.TABLE_NAME,
+                ThemesColumns.TITLE, "Holo", ThemesColumns.PKG_NAME, "holo"));
+
+        // we need to update any existing themes
+        final String[] projection = { ThemesColumns.PKG_NAME, ThemesColumns.MODIFIES_STATUS_BAR,
+                ThemesColumns.MODIFIES_ICONS, ThemesColumns.MODIFIES_OVERLAYS,
+                ThemesColumns.MODIFIES_LAUNCHER, ThemesColumns.MODIFIES_BOOT_ANIM };
+        final String selection = ThemesColumns.MODIFIES_OVERLAYS + "=?";
+        final String[] selectionArgs = { "1" };
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                Intent intent = new Intent(mContext, PreviewGenerationService.class);
+                intent.setAction(PreviewGenerationService.ACTION_INSERT);
+                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, c.getString(0));
+                intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, c.getInt(1) == 1);
+                intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS, c.getInt(2) == 1);
+                intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES, c.getInt(3) == 1);
+                intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER, c.getInt(4) == 1);
+                intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION, c.getInt(5) == 1);
+                mContext.startService(intent);
+            }
+            c.close();
+        }
+    }
+
+    private void upgradeToVersion7(SQLiteDatabase db) {
+        String addStatusBar = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER",
+                ThemesTable.TABLE_NAME, ThemesColumns.MODIFIES_STATUS_BAR);
+        String addNavBar = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER",
+                ThemesTable.TABLE_NAME, ThemesColumns.MODIFIES_NAVIGATION_BAR);
+        db.execSQL(addStatusBar);
+        db.execSQL(addNavBar);
+
+        // we need to update any existing themes
+        final String[] projection = { ThemesColumns.PKG_NAME, ThemesColumns.IS_LEGACY_THEME };
+        final String selection = ThemesColumns.MODIFIES_OVERLAYS + "=? OR " +
+                ThemesColumns.IS_LEGACY_THEME + "=?";
+        final String[] selectionArgs = { "1", "1" };
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                final String pkgName = c.getString(0);
+                final boolean isLegacyTheme = c.getInt(1) == 1;
+                boolean hasSystemUi = false;
+                if (DEFAULT_PKG_NAME.equals(pkgName) || isLegacyTheme) {
+                    hasSystemUi = true;
+                } else {
+                    try {
+                        Context themeContext = mContext.createPackageContext(pkgName, 0);
+                        hasSystemUi = ThemePackageHelper.hasThemeComponent(themeContext,
+                                ThemePackageHelper.sComponentToFolderName.get(
+                                        ThemesColumns.MODIFIES_STATUS_BAR));
+                    } catch (PackageManager.NameNotFoundException e) {
+                        // default to false
+                    }
+                }
+                if (hasSystemUi) {
+                    db.execSQL(String.format("UPDATE %S SET %s='1', %s='1' WHERE %s='%s'",
+                            ThemesTable.TABLE_NAME, ThemesColumns.MODIFIES_STATUS_BAR,
+                            ThemesColumns.MODIFIES_NAVIGATION_BAR, ThemesColumns.PKG_NAME,
+                            pkgName));
+                    Intent intent = new Intent(mContext, PreviewGenerationService.class);
+                    intent.setAction(PreviewGenerationService.ACTION_INSERT);
+                    intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, pkgName);
+                    intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
+                    mContext.startService(intent);
+                }
+            }
+            c.close();
+        }
+    }
+
+    private void upgradeToVersion8(SQLiteDatabase db) {
+        String addNavBar = String.format("ALTER TABLE %s ADD COLUMN %s BLOB",
+                PreviewsTable.TABLE_NAME, PreviewColumns.NAVBAR_BACKGROUND);
+        db.execSQL(addNavBar);
+
+        // we need to update any existing themes with the new NAVBAR_BACKGROUND
+        final String[] projection = { ThemesColumns.PKG_NAME, ThemesColumns.IS_LEGACY_THEME };
+        final String selection = ThemesColumns.MODIFIES_OVERLAYS + "=? OR " +
+                ThemesColumns.IS_LEGACY_THEME + "=?";
+        final String[] selectionArgs = { "1", "1" };
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                final String pkgName = c.getString(0);
+                final boolean isLegacyTheme = c.getInt(1) == 1;
+                boolean hasSystemUi = false;
+                if (DEFAULT_PKG_NAME.equals(pkgName) || isLegacyTheme) {
+                    hasSystemUi = true;
+                } else {
+                    try {
+                        Context themeContext = mContext.createPackageContext(pkgName, 0);
+                        hasSystemUi = ThemePackageHelper.hasThemeComponent(themeContext,
+                                ThemePackageHelper.sComponentToFolderName.get(
+                                        ThemesColumns.MODIFIES_STATUS_BAR));
+                    } catch (PackageManager.NameNotFoundException e) {
+                        // default to false
+                    }
+                }
+                if (hasSystemUi) {
+                    Intent intent = new Intent(mContext, PreviewGenerationService.class);
+                    intent.setAction(PreviewGenerationService.ACTION_INSERT);
+                    intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, pkgName);
+                    intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
+                    mContext.startService(intent);
+                }
+            }
+            c.close();
+        }
+    }
+
+    private void upgradeToVersion9(SQLiteDatabase db) {
+        String addNavBar = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT 0",
+                ThemesTable.TABLE_NAME, ThemesColumns.INSTALL_TIME);
+        db.execSQL(addNavBar);
+
+        // we need to update any existing themes with their install time
+        final String[] projection = { ThemesColumns.PKG_NAME };
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, null, null, null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                final String pkgName = c.getString(0);
+                try {
+                    PackageInfo pi = mContext.getPackageManager().getPackageInfo(pkgName, 0);
+                    db.execSQL(String.format("UPDATE %s SET %s='%d' WHERE %s='%s'",
+                            ThemesTable.TABLE_NAME, ThemesColumns.INSTALL_TIME, pi.firstInstallTime,
+                            ThemesColumns.PKG_NAME, pkgName));
+                } catch (PackageManager.NameNotFoundException e) {
+                    Log.e(TAG, "Unable to update install time for " + pkgName, e);
+                }
+            }
+            c.close();
+        }
+    }
+
+    private void upgradeToVersion10(SQLiteDatabase db) {
+        // add API entries
+        String sql = String.format("ALTER TABLE %s ADD COLUMN %s TEXT",
+                ThemesTable.TABLE_NAME, ThemesColumns.TARGET_API);
+        db.execSQL(sql);
+
+        // we need to update any existing themes with their install time
+        final String[] projection = { ThemesColumns.PKG_NAME };
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, null, null, null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                final String pkgName = c.getString(0);
+                int targetSdk = -1;
+                if (DEFAULT_PKG_NAME.equals(pkgName)) {
+                    // 0 is a special value used for the system theme, not to be confused with the
+                    // default theme which may not be the same as the system theme.
+                    targetSdk = 0;
+                } else {
+                    try {
+                        PackageInfo pi = mContext.getPackageManager().getPackageInfo(pkgName, 0);
+                        targetSdk = pi.applicationInfo.targetSdkVersion;
+                    } catch (PackageManager.NameNotFoundException e) {
+                        Log.e(TAG, "Unable to update target sdk for " + pkgName, e);
+                    }
+                }
+                if (targetSdk != -1) {
+                    db.execSQL(String.format("UPDATE %s SET %s='%d' WHERE %s='%s'", ThemesTable
+                                    .TABLE_NAME, ThemesColumns.TARGET_API,
+                            targetSdk, ThemesColumns.PKG_NAME, pkgName));
+                }
+            }
+            c.close();
+        }
+    }
+
+    private void upgradeToVersion11(SQLiteDatabase db) {
+        // Update holo theme to be called "system"
+        final String NEW_THEME_TITLE = "System";
+        final String PREV_SYSTEM_PKG_NAME = "holo";
+        String holoToSystem = String.format("UPDATE TABLE %s " +
+                        "SET title=%s, pkg_name=%s " +
+                        "WHERE %s='%s'",
+                ThemesTable.TABLE_NAME,
+                NEW_THEME_TITLE,
+                DEFAULT_PKG_NAME,
+                ThemesColumns.PKG_NAME, PREV_SYSTEM_PKG_NAME);
+        db.execSQL(holoToSystem);
+
+    }
+
     private void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS " + ThemesTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MixnMatchTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + PreviewsTable.TABLE_NAME);
     }
 
     public static class ThemesTable {
@@ -164,26 +390,25 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         ThemesColumns.MODIFIES_NOTIFICATIONS + " INTEGER DEFAULT 0, " +
                         ThemesColumns.MODIFIES_ALARMS + " INTEGER DEFAULT 0, " +
                         ThemesColumns.MODIFIES_OVERLAYS + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.MODIFIES_STATUS_BAR + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.MODIFIES_NAVIGATION_BAR + " INTEGER DEFAULT 0, " +
                         ThemesColumns.PRESENT_AS_THEME + " INTEGER DEFAULT 0, " +
-                        ThemesColumns.IS_LEGACY_THEME + " INTEGER DEFAULT 0," +
-                        ThemesColumns.IS_DEFAULT_THEME + " INTEGER DEFAULT 0," +
-                        ThemesColumns.IS_LEGACY_ICONPACK + " INTEGER DEFAULT 0," +
-                        ThemesColumns.LAST_UPDATE_TIME + " INTEGER DEFAULT 0" +
+                        ThemesColumns.IS_LEGACY_THEME + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.IS_DEFAULT_THEME + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.IS_LEGACY_ICONPACK + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.LAST_UPDATE_TIME + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.INSTALL_TIME + " INTEGER DEFAULT 0, " +
+                        ThemesColumns.TARGET_API + " INTEGER DEFAULT 0" +
                         ")";
 
-        public static void insertHoloDefaults(SQLiteDatabase db, Context context) {
-            int isDefault = isHoloDefault(context) ? 1 : 0;
+        public static void insertSystemDefaults(SQLiteDatabase db, Context context) {
+            int isDefault = isSystemDefault(context) ? 1 : 0;
             ContentValues values = new ContentValues();
-            values.put(ThemesColumns.TITLE, "Holo (Default)");
+            values.put(ThemesColumns.TITLE, "System");
             values.put(ThemesColumns.PKG_NAME, DEFAULT_PKG_NAME);
             values.put(ThemesColumns.PRIMARY_COLOR, 0xff33b5e5);
             values.put(ThemesColumns.SECONDARY_COLOR, 0xff000000);
             values.put(ThemesColumns.AUTHOR, "Android");
-            values.put(ThemesColumns.BOOT_ANIM_URI, "file:///android_asset/default_holo_theme/holo_boot_anim.jpg");
-            values.put(ThemesColumns.HOMESCREEN_URI, "file:///android_asset/default_holo_theme/holo_homescreen.png");
-            values.put(ThemesColumns.LOCKSCREEN_URI, "file:///android_asset/default_holo_theme/holo_lockscreen.png");
-            values.put(ThemesColumns.STYLE_URI, "file:///android_asset/default_holo_theme/style.jpg");
-            values.put(ThemesColumns.WALLPAPER_URI, "file:///android_asset/default_holo_theme/blueice_modcircle.jpg");
             values.put(ThemesColumns.MODIFIES_ALARMS, 1);
             values.put(ThemesColumns.MODIFIES_BOOT_ANIM, 1);
             values.put(ThemesColumns.MODIFIES_FONTS, 1);
@@ -192,6 +417,8 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.MODIFIES_LOCKSCREEN, 1);
             values.put(ThemesColumns.MODIFIES_NOTIFICATIONS, 1);
             values.put(ThemesColumns.MODIFIES_RINGTONES, 1);
+            values.put(ThemesColumns.MODIFIES_STATUS_BAR, 1);
+            values.put(ThemesColumns.MODIFIES_NAVIGATION_BAR, 1);
             values.put(ThemesColumns.PRESENT_AS_THEME, 1);
             values.put(ThemesColumns.IS_LEGACY_THEME, 0);
             values.put(ThemesColumns.IS_DEFAULT_THEME, isDefault);
@@ -219,9 +446,80 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         }
     }
 
-    private static boolean isHoloDefault(Context context) {
+    public static class PreviewsTable {
+        protected static final String TABLE_NAME = "previews";
+        private static final String PREVIEWS_TABLE_CREATE =
+                "CREATE TABLE " + TABLE_NAME + " (" +
+                        PreviewColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        PreviewColumns.THEME_ID + " INTEGER, " +
+                        PreviewColumns.STATUSBAR_BACKGROUND + " BLOB, " +
+                        PreviewColumns.STATUSBAR_BLUETOOTH_ICON + " BLOB, " +
+                        PreviewColumns.STATUSBAR_WIFI_ICON + " BLOB, " +
+                        PreviewColumns.STATUSBAR_SIGNAL_ICON + " BLOB, " +
+                        PreviewColumns.STATUSBAR_BATTERY_PORTRAIT + " BLOB, " +
+                        PreviewColumns.STATUSBAR_BATTERY_LANDSCAPE + " BLOB, " +
+                        PreviewColumns.STATUSBAR_BATTERY_CIRCLE + " BLOB, " +
+                        PreviewColumns.STATUSBAR_CLOCK_TEXT_COLOR + " INTEGER, " +
+                        PreviewColumns.STATUSBAR_WIFI_COMBO_MARGIN_END + " INTEGER, " +
+                        PreviewColumns.NAVBAR_BACKGROUND + " BLOB, " +
+                        PreviewColumns.NAVBAR_BACK_BUTTON + " BLOB, " +
+                        PreviewColumns.NAVBAR_HOME_BUTTON + " BLOB, " +
+                        PreviewColumns.NAVBAR_RECENT_BUTTON + " BLOB, " +
+                        PreviewColumns.ICON_PREVIEW_1 + " BLOB, " +
+                        PreviewColumns.ICON_PREVIEW_2 + " BLOB, " +
+                        PreviewColumns.ICON_PREVIEW_3 + " BLOB, " +
+                        PreviewColumns.ICON_PREVIEW_4 + " BLOB, " +
+                        PreviewColumns.STYLE_PREVIEW + " BLOB, " +
+                        PreviewColumns.STYLE_THUMBNAIL + " BLOB, " +
+                        PreviewColumns.WALLPAPER_PREVIEW + " BLOB, " +
+                        PreviewColumns.WALLPAPER_THUMBNAIL + " BLOB, " +
+                        PreviewColumns.LOCK_WALLPAPER_PREVIEW + " BLOB, " +
+                        PreviewColumns.LOCK_WALLPAPER_THUMBNAIL + " BLOB, " +
+                        PreviewColumns.BOOTANIMATION_THUMBNAIL + " BLOB, " +
+                        "FOREIGN KEY (" + PreviewColumns.THEME_ID + ") REFERENCES " +
+                        ThemesTable.TABLE_NAME + "(" + ThemesColumns._ID + ")" +
+                        ")";
+
+        public static final String[] STATUS_BAR_PREVIEW_COLUMNS = {
+                PreviewColumns.STATUSBAR_BACKGROUND,
+                PreviewColumns.STATUSBAR_BLUETOOTH_ICON,
+                PreviewColumns.STATUSBAR_WIFI_ICON,
+                PreviewColumns.STATUSBAR_SIGNAL_ICON,
+                PreviewColumns.STATUSBAR_BATTERY_PORTRAIT,
+                PreviewColumns.STATUSBAR_BATTERY_LANDSCAPE,
+                PreviewColumns.STATUSBAR_BATTERY_CIRCLE,
+                PreviewColumns.STATUSBAR_WIFI_COMBO_MARGIN_END,
+                PreviewColumns.STATUSBAR_CLOCK_TEXT_COLOR
+        };
+        public static final String[] NAVIGATION_BAR_PREVIEW_COLUMNS = {
+                PreviewColumns.NAVBAR_BACK_BUTTON,
+                PreviewColumns.NAVBAR_HOME_BUTTON,
+                PreviewColumns.NAVBAR_RECENT_BUTTON,
+                PreviewColumns.NAVBAR_BACKGROUND
+        };
+        public static final String[] ICON_PREVIEW_COLUMNS = {
+                PreviewColumns.ICON_PREVIEW_1,
+                PreviewColumns.ICON_PREVIEW_2,
+                PreviewColumns.ICON_PREVIEW_3,
+                PreviewColumns.ICON_PREVIEW_4
+        };
+
+        public static void insertDefaults(Context context) {
+            Intent intent = new Intent(context, PreviewGenerationService.class);
+            intent.setAction(PreviewGenerationService.ACTION_INSERT);
+            intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, DEFAULT_PKG_NAME);
+            intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
+            intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS, true);
+            intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES, true);
+            intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER, true);
+            intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION, true);
+            context.startService(intent);
+        }
+    }
+
+    private static boolean isSystemDefault(Context context) {
         // == is okay since we are checking if what is returned is the same constant string value
-        return ThemeConfig.HOLO_DEFAULT == ThemeUtils.getDefaultThemePackageName(context);
+        return ThemeConfig.SYSTEM_DEFAULT == ThemeUtils.getDefaultThemePackageName(context);
     }
 }
 

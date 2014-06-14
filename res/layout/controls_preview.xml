@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="264dp"
+    android:layout_height="wrap_content"
+    android:theme="@android:style/Theme.Material.Light">
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="37dp"
+            android:src="@*android:drawable/btn_star_mtrl_alpha"
+            android:tint="?*android:attr/colorControlNormal"/>
+
+        <ImageView
+            android:layout_width="47dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center_vertical"
+            android:src="@*android:drawable/text_select_handle_left_material"/>
+
+        <ImageView
+            android:layout_width="47dp"
+            android:layout_height="58dp"
+            android:layout_gravity="center_vertical"
+            android:src="@*android:drawable/text_select_handle_right_material"/>
+
+        <ImageView
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="37dp"
+            android:src="@*android:drawable/btn_star_mtrl_alpha"
+            android:tint="?*android:attr/colorControlActivated"/>
+
+    </LinearLayout>
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <Button
+            android:layout_width="96dp"
+            android:layout_height="30dp"
+            android:layout_marginEnd="72dp"
+            android:textSize="12sp"
+            android:text="@string/controls_preview_button_text" />
+
+        <Switch
+            android:layout_width="96dp"
+            android:layout_height="24dp"
+            android:checked="true"/>
+
+    </LinearLayout>
+
+    <SeekBar
+        android:layout_width="match_parent"
+        android:layout_height="32dp"
+        android:max="100"
+        android:progress="50"
+        android:layout_marginStart="-12dp"
+        android:layout_marginEnd="-14dp"
+        android:layout_gravity="center_horizontal"/>
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom"
+            android:src="@*android:drawable/btn_check_to_on_mtrl_000" />
+
+        <ImageView
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom"
+            android:layout_marginEnd="44dp"
+            android:src="@*android:drawable/btn_check_to_on_mtrl_015" />
+
+        <ProgressBar
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="44dp" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:src="@*android:drawable/btn_radio_to_on_mtrl_000" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:src="@*android:drawable/btn_radio_to_on_mtrl_015" />
+
+    </LinearLayout>
+
+</LinearLayout>
