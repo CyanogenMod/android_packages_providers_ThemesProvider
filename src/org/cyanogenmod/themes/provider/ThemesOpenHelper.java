@@ -18,7 +18,7 @@ package org.cyanogenmod.themes.provider;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.ThemeUtils;
-import android.content.res.CustomTheme;
+import android.content.res.ThemeConfig;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -32,7 +32,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
 
     private static final int DATABASE_VERSION = 5;
     private static final String DATABASE_NAME = "themes.db";
-    private static final String DEFAULT_PKG_NAME = CustomTheme.HOLO_DEFAULT;
+    private static final String DEFAULT_PKG_NAME = ThemeConfig.HOLO_DEFAULT;
 
     private Context mContext;
 
@@ -221,7 +221,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
 
     private static boolean isHoloDefault(Context context) {
         // == is okay since we are checking if what is returned is the same constant string value
-        return CustomTheme.HOLO_DEFAULT == ThemeUtils.getDefaultThemePackageName(context);
+        return ThemeConfig.HOLO_DEFAULT == ThemeUtils.getDefaultThemePackageName(context);
     }
 }
 
