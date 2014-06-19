@@ -98,11 +98,7 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
 
         // Insert theme capabilities
-        for (Map.Entry<String, Boolean> entry : capabilities.entrySet()) {
-            String component = entry.getKey();
-            Boolean isImplemented = entry.getValue();
-            values.put(component, isImplemented);
-        }
+        insertCapabilities(capabilities, values);
 
         context.getContentResolver().insert(ThemesColumns.CONTENT_URI, values);
     }
@@ -122,12 +118,7 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
 
         // Insert theme capabilities
-        for (Map.Entry<String, Boolean> entry : capabilities.entrySet()) {
-            String component = entry.getKey();
-            Boolean isImplemented = ThemesColumns.MODIFIES_OVERLAYS.equals(component) ? Boolean.TRUE
-                    : entry.getValue();
-            values.put(component, isImplemented);
-        }
+        insertCapabilities(capabilities, values);
 
         context.getContentResolver().insert(ThemesColumns.CONTENT_URI, values);
     }
@@ -147,11 +138,7 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.IS_LEGACY_ICONPACK, 1);
 
         // Insert theme capabilities
-        for (Map.Entry<String, Boolean> entry : capabilities.entrySet()) {
-            String component = entry.getKey();
-            Boolean isImplemented =  entry.getValue();
-            values.put(component, isImplemented);
-        }
+        insertCapabilities(capabilities, values);
 
         context.getContentResolver().insert(ThemesColumns.CONTENT_URI, values);
     }
@@ -215,6 +202,9 @@ public class ThemePackageHelper {
                 ThemeUtils.getDefaultThemePackageName(context).equals(pi.packageName) ? 1 : 0);
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
 
+        // Insert theme capabilities
+        insertCapabilities(capabilities, values);
+
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
@@ -232,6 +222,9 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.TITLE, labelName.toString());
         values.put(ThemesColumns.DATE_CREATED, System.currentTimeMillis());
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
+
+        // Insert theme capabilities
+        insertCapabilities(capabilities, values);
 
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
@@ -298,6 +291,15 @@ public class ThemePackageHelper {
             implementMap.put(component, hasComponent);
         }
         return implementMap;
+    }
+
+    private static void insertCapabilities(Map<String, Boolean> capabilities,
+            ContentValues values) {
+        for (Map.Entry<String, Boolean> entry : capabilities.entrySet()) {
+            String component = entry.getKey();
+            Boolean isImplemented =  entry.getValue();
+            values.put(component, isImplemented);
+        }
     }
 
     private static boolean hasThemeComponentLegacy(PackageInfo pi, String component) {
