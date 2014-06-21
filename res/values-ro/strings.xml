@@ -16,6 +16,6 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Temų teikėjas</string>
-  <string name="unknown_app_name">Nežinoma</string>
+  <string name="app_name">Furnizor de teme</string>
+  <string name="unknown_app_name">Necunoscut</string>
 </resources>
