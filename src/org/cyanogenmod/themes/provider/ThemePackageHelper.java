@@ -156,6 +156,9 @@ public class ThemePackageHelper {
             } else if (pi.isLegacyIconPackApk) {
                 updateLegacyIconPackInternal(context, pi, capabilities);
             }
+
+            // We should reapply any components that are currently applied for this theme.
+            reapplyInstalledComponentsForTheme(context, pkgName);
         }
     }
 
@@ -347,5 +350,24 @@ public class ThemePackageHelper {
             count += isImplemented ? 1 : 0;
         }
         return count >= 2;
+    }
+
+    private static void reapplyInstalledComponentsForTheme(Context context, String pkgName) {
+        List<String> reApply = new LinkedList<String>(); // components to re-apply
+        Cursor mixnmatch = context.getContentResolver().query(MixnMatchColumns.CONTENT_URI,
+                null, null, null, null);
+        while (mixnmatch.moveToNext()) {
+            String mixnmatchKey = mixnmatch.getString(mixnmatch
+                    .getColumnIndex(MixnMatchColumns.COL_KEY));
+            String component = ThemesContract.MixnMatchColumns
+                    .mixNMatchKeyToComponent(mixnmatchKey);
+            String pkg = mixnmatch.getString(
+                    mixnmatch.getColumnIndex(MixnMatchColumns.COL_VALUE));
+            if (pkgName.equals(pkg)) {
+                reApply.add(component);
+            }
+        }
+        ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
+        manager.requestThemeChange(pkgName, reApply);
     }
 }
