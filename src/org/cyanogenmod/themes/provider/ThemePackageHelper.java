@@ -49,6 +49,8 @@ import static android.content.res.CustomTheme.HOLO_DEFAULT;
 public class ThemePackageHelper {
     public final static String TAG = ThemePackageHelper.class.getName();
 
+    private static final long REAPPLY_THEME_DELAY = 1000L;
+
     // Maps the theme component to its folder name in assets.
     public static HashMap<String, String> sComponentToFolderName = new HashMap<String, String>();
     static {
@@ -170,7 +172,7 @@ public class ThemePackageHelper {
                     // We should reapply any components that are currently applied for this theme.
                     reapplyInstalledComponentsForTheme(context, pkgName);
                 }
-            }, 500);
+            }, REAPPLY_THEME_DELAY);
         }
     }
 
