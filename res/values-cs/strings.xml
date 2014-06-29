@@ -16,6 +16,6 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Poskytovatel témat</string>
+  <string name="app_name">Poskytovatel motivů</string>
   <string name="unknown_app_name">Neznámé</string>
 </resources>
