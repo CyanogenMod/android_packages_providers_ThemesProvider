@@ -26,8 +26,6 @@ import android.content.pm.ThemeUtils;
 import android.content.res.AssetManager;
 import android.content.res.ThemeManager;
 import android.database.Cursor;
-import android.os.Handler;
-import android.os.Looper;
 import android.provider.ThemesContract;
 import android.provider.ThemesContract.MixnMatchColumns;
 import android.provider.ThemesContract.ThemesColumns;
@@ -48,8 +46,6 @@ import static android.content.res.CustomTheme.HOLO_DEFAULT;
  */
 public class ThemePackageHelper {
     public final static String TAG = ThemePackageHelper.class.getName();
-
-    private static final long REAPPLY_THEME_DELAY = 1000L;
 
     // Maps the theme component to its folder name in assets.
     public static HashMap<String, String> sComponentToFolderName = new HashMap<String, String>();
@@ -147,8 +143,7 @@ public class ThemePackageHelper {
         context.getContentResolver().insert(ThemesColumns.CONTENT_URI, values);
     }
 
-    public static void updatePackage(final Context context, final String pkgName)
-            throws NameNotFoundException {
+    public static void updatePackage(Context context, String pkgName) throws NameNotFoundException {
         if (HOLO_DEFAULT.equals(pkgName)) {
             updateHoloPackageInternal(context);
         } else {
@@ -162,17 +157,8 @@ public class ThemePackageHelper {
                 updateLegacyIconPackInternal(context, pi, capabilities);
             }
 
-            // Calling reapplyInstalledComponentsForTheme in a runnable posted to a handler gives
-            // other processes enough time to process the ACTION_PACKAGE_REPLACED before the theme
-            // change is completed and restarts apps due to config change.
-            Handler h = new Handler(Looper.getMainLooper());
-            h.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    // We should reapply any components that are currently applied for this theme.
-                    reapplyInstalledComponentsForTheme(context, pkgName);
-                }
-            }, REAPPLY_THEME_DELAY);
+            // We should reapply any components that are currently applied for this theme.
+            reapplyInstalledComponentsForTheme(context, pkgName);
         }
     }
 
@@ -239,6 +225,9 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.TITLE, labelName.toString());
         values.put(ThemesColumns.DATE_CREATED, System.currentTimeMillis());
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
+
+        // Insert theme capabilities
+        insertCapabilities(capabilities, values);
 
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
