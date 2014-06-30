@@ -36,7 +36,7 @@ public class AppReceiver extends BroadcastReceiver {
         try {
             if (intent.getAction().equals(Intent.ACTION_PACKAGE_ADDED) && !isReplacing) {
                 ThemePackageHelper.insertPackage(context, pkgName);
-            } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_BEING_REMOVED)) {
+            } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_FULLY_REMOVED)) {
                 ThemePackageHelper.removePackage(context, pkgName);
             } else if (intent.getAction().equals(Intent.ACTION_PACKAGE_REPLACED)) {
                 if (themeExistsInProvider(context, pkgName)) {
