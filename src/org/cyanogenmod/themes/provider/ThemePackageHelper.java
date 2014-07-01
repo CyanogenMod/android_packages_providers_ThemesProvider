@@ -226,9 +226,6 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.DATE_CREATED, System.currentTimeMillis());
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
 
-        // Insert theme capabilities
-        insertCapabilities(capabilities, values);
-
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
