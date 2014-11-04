@@ -43,6 +43,9 @@
 
                 <data android:scheme="package" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.THEME_RESOURCES_CACHED" />
+            </intent-filter>
         </receiver>
     </application>
 
