@@ -86,7 +86,7 @@ public class ThemePackageHelper {
     private static void insertPackageInternal(Context context, PackageInfo pi,
             Map<String, Boolean> capabilities, boolean processPreviews) {
         ThemeInfo info = pi.themeInfo;
-        boolean isPresentableTheme = ThemePackageHelper.isPresentableTheme(capabilities);
+        boolean isPresentableTheme = isPresentableTheme(capabilities);
 
         ContentValues values = new ContentValues();
         values.put(ThemesColumns.PKG_NAME, pi.packageName);
@@ -285,13 +285,16 @@ public class ThemePackageHelper {
     }
 
     // Presently we are defining a "presentable" theme as any theme
-    // which implements 2+ components. Such themes can be shown to the user
-    // under the "themes" category.
+    // which has icons, wallpaper, and overlays
     public static boolean isPresentableTheme(Map<String, Boolean> implementMap) {
         return implementMap != null &&
-                implementMap.containsKey(ThemesColumns.MODIFIES_LAUNCHER) &&
-                implementMap.containsKey(ThemesColumns.MODIFIES_ICONS) &&
-                implementMap.containsKey(ThemesColumns.MODIFIES_OVERLAYS);
+                hasThemeComponent(implementMap, ThemesColumns.MODIFIES_LAUNCHER) &&
+                hasThemeComponent(implementMap, ThemesColumns.MODIFIES_ICONS) &&
+                hasThemeComponent(implementMap, ThemesColumns.MODIFIES_OVERLAYS);
+    }
+
+    private static boolean hasThemeComponent(Map<String, Boolean> componentMap, String component) {
+        return componentMap.containsKey(component) && componentMap.get(component);
     }
 
     private static void reapplyInstalledComponentsForTheme(Context context, String pkgName) {
