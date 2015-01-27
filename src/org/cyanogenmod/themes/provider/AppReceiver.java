@@ -71,6 +71,7 @@ public class AppReceiver extends BroadcastReceiver {
                         PreferenceUtils.getInstalledThemesBeingProcessed(context);
                 if (processingThemes != null &&
                         processingThemes.contains(themePkgName) && result >= 0) {
+                    PreferenceUtils.removeThemeBeingProcessed(context, themePkgName);
                     if (themeExistsInProvider(context, themePkgName)) {
                         ThemePackageHelper.updatePackage(context, themePkgName);
                     } else {
