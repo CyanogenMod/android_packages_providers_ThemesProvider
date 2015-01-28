@@ -35,7 +35,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 11;
+    private static final int DATABASE_VERSION = 12;
     private static final String DATABASE_NAME = "themes.db";
     private static final String DEFAULT_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
 
@@ -100,6 +100,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 10) {
                 upgradeToVersion11(db);
                 oldVersion = 11;
+            }
+            if (oldVersion == 11) {
+                upgradeToVersion12(db);
+                oldVersion = 12;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -353,6 +357,26 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 ThemesColumns.PKG_NAME, PREV_SYSTEM_PKG_NAME);
         db.execSQL(holoToSystem);
 
+    }
+
+    private void upgradeToVersion12(SQLiteDatabase db) {
+        // This upgrade performs an update to the ThemesColumns.PRESENT_AS_THEME since the
+        // requirements for what is a presentable theme have changed.
+        final String[] projection = { ThemesColumns.PKG_NAME, ThemesColumns.MODIFIES_LAUNCHER,
+                ThemesColumns.MODIFIES_OVERLAYS};
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, null, null, null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                final String pkgName = c.getString(0);
+                boolean presentAsTheme =
+                        c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_LAUNCHER)) == 1 &&
+                                c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_OVERLAYS)) == 1;
+                db.execSQL(String.format("UPDATE %s SET %s='%d' WHERE %s='%s'",
+                        ThemesTable.TABLE_NAME, ThemesColumns.PRESENT_AS_THEME,
+                            presentAsTheme ? 1 : 0, ThemesColumns.PKG_NAME, pkgName));
+            }
+            c.close();
+        }
     }
 
     private void dropTables(SQLiteDatabase db) {
