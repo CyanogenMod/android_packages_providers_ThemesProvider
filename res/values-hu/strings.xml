@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Témakezelő</string>
   <string name="unknown_app_name">Ismeretlen</string>
+  <string name="controls_preview_button_text">Normál</string>
 </resources>

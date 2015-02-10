@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Провајдер тема</string>
   <string name="unknown_app_name">Непознато</string>
+  <string name="controls_preview_button_text">Нормално</string>
 </resources>

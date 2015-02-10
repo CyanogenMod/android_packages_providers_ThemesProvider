@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Themes provider</string>
   <string name="unknown_app_name">不明</string>
+  <string name="controls_preview_button_text">正常</string>
 </resources>

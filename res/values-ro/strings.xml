@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Furnizor de teme</string>
   <string name="unknown_app_name">Necunoscut</string>
+  <string name="controls_preview_button_text">Normal</string>
 </resources>

@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Gestore temi</string>
   <string name="unknown_app_name">Sconosciuto</string>
+  <string name="controls_preview_button_text">Normale</string>
 </resources>

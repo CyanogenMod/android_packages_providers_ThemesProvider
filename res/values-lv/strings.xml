@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Tēmas autors</string>
   <string name="unknown_app_name">Nezināms</string>
+  <string name="controls_preview_button_text">Normāls</string>
 </resources>

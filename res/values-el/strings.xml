@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Πάροχος θεμάτων</string>
   <string name="unknown_app_name">Άγνωστο</string>
+  <string name="controls_preview_button_text">Κανονικό</string>
 </resources>

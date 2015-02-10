@@ -16,6 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">テーマプロバイダー</string>
+  <string name="app_name">テーマプロバイダ</string>
   <string name="unknown_app_name">不明</string>
+  <string name="controls_preview_button_text">標準</string>
 </resources>

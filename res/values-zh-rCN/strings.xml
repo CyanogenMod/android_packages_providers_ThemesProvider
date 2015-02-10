@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">主题提供器</string>
   <string name="unknown_app_name">未知</string>
+  <string name="controls_preview_button_text">普通</string>
 </resources>
