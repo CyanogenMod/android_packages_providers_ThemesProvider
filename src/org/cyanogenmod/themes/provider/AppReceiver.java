@@ -52,16 +52,16 @@ public class AppReceiver extends BroadcastReceiver {
             } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
                 final boolean themeProcessing = isThemeBeingProcessed(context, pkgName);
                 if (themeExistsInProvider(context, pkgName)) {
-                    ThemePackageHelper.updatePackage(context, pkgName);
+                    if (!themeProcessing) ThemePackageHelper.updatePackage(context, pkgName);
                 } else {
                     // Edge case where app was not a theme in previous install
                     ThemePackageHelper.insertPackage(context, pkgName, !themeProcessing);
+                }
 
-                    if (themeProcessing) {
-                        // store this package name so we know it's being processed and it can be
-                        // added or updated when ACTION_THEME_RESOURCES_CACHED is received
-                        PreferenceUtils.addThemeBeingProcessed(context, pkgName);
-                    }
+                if (themeProcessing) {
+                    // store this package name so we know it's being processed and it can be
+                    // added or updated when ACTION_THEME_RESOURCES_CACHED is received
+                    PreferenceUtils.addThemeBeingProcessed(context, pkgName);
                 }
             } else if (Intent.ACTION_THEME_RESOURCES_CACHED.equals(action)) {
                 final String themePkgName = intent.getStringExtra(Intent.EXTRA_THEME_PACKAGE_NAME);
