@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Poskytovatel motivů</string>
   <string name="unknown_app_name">Neznámé</string>
+  <string name="controls_preview_button_text">Normální</string>
 </resources>

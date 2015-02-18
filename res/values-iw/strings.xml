@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">ספק ערכות עיצוב</string>
   <string name="unknown_app_name">לא ידוע</string>
+  <string name="controls_preview_button_text">רגיל</string>
 </resources>
