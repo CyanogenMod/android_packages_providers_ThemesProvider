@@ -24,6 +24,7 @@ import android.content.pm.ThemeInfo;
 import android.content.pm.ThemeUtils;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
+import android.content.res.ThemeChangeRequest;
 import android.content.res.ThemeConfig;
 import android.content.res.ThemeManager;
 import android.database.Cursor;
@@ -205,7 +206,9 @@ public class ThemePackageHelper {
     public static void removePackage(Context context, String pkgToRemove) {
         // Check currently applied components (fonts, wallpapers etc) and verify the theme is still
         // installed. If it is not installed, we need to set the component back to the default theme
-        List<String> moveToDefault = new LinkedList<String>(); // components to move back to default
+        ThemeChangeRequest.Builder builder = new ThemeChangeRequest.Builder();
+        String defaultPkgName = ThemeUtils.getDefaultThemePackageName(context);
+
         Cursor mixnmatch = context.getContentResolver().query(MixnMatchColumns.CONTENT_URI, null,
                 null, null, null);
         while (mixnmatch.moveToNext()) {
@@ -215,12 +218,24 @@ public class ThemePackageHelper {
                     .mixNMatchKeyToComponent(mixnmatchKey);
             String pkg = mixnmatch.getString(mixnmatch.getColumnIndex(MixnMatchColumns.COL_VALUE));
             if (pkgToRemove.equals(pkg)) {
-                moveToDefault.add(component);
+                builder.setComponent(component, defaultPkgName);
             }
         }
-        String pkgName = ThemeUtils.getDefaultThemePackageName(context);
+
+        // Check for any per-app themes components using this theme
+        final Configuration config = context.getResources().getConfiguration();
+        final ThemeConfig themeConfig = config != null ? config.themeConfig : null;
+        if (themeConfig != null) {
+            final Map<String, ThemeConfig.AppTheme> themes = themeConfig.getAppThemes();
+            for (String appPkgName : themes.keySet()) {
+                if (ThemeUtils.isPerAppThemeComponent(appPkgName) &&
+                        pkgToRemove.equals(themes.get(appPkgName).getOverlayPkgName())) {
+                    builder.setAppOverlay(appPkgName, defaultPkgName);
+                }
+            }
+        }
         ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
-        manager.requestThemeChange(pkgName, moveToDefault);
+        manager.requestThemeChange(builder.build(), false);
 
         // Delete the theme from the db
         String selection = ThemesColumns.PKG_NAME + "= ?";
@@ -302,28 +317,36 @@ public class ThemePackageHelper {
         Configuration config = context.getResources().getConfiguration();
         if (config == null || config.themeConfig == null) return;
 
-        List<String> reApply = new LinkedList<String>(); // components to re-apply
+        ThemeChangeRequest.Builder builder = new ThemeChangeRequest.Builder();
         // Other packages such as wallpaper can be changed outside of themes
         // and are not tracked well by the provider. We only care to apply resources that may crash
         // the system if they are not reapplied.
         ThemeConfig themeConfig = config.themeConfig;
         if (pkgName.equals(themeConfig.getFontPkgName())) {
-            reApply.add(ThemesColumns.MODIFIES_FONTS);
+            builder.setFont(pkgName);
         }
         if (pkgName.equals(themeConfig.getIconPackPkgName())) {
-            reApply.add(ThemesColumns.MODIFIES_ICONS);
+            builder.setIcons(pkgName);
         }
         if (pkgName.equals(themeConfig.getOverlayPkgName())) {
-            reApply.add(ThemesColumns.MODIFIES_OVERLAYS);
+            builder.setOverlay(pkgName);
         }
         if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_STATUS_BAR_PKG))) {
-            reApply.add(ThemesColumns.MODIFIES_STATUS_BAR);
+            builder.setStatusBar(pkgName);
         }
         if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_NAVBAR_PKG))) {
-            reApply.add(ThemesColumns.MODIFIES_NAVIGATION_BAR);
+            builder.setNavBar(pkgName);
+        }
+
+        // Check if there are any per-app overlays using this theme
+        final Map<String, ThemeConfig.AppTheme> themes = themeConfig.getAppThemes();
+        for (String appPkgName : themes.keySet()) {
+            if (ThemeUtils.isPerAppThemeComponent(appPkgName)) {
+                builder.setAppOverlay(appPkgName, pkgName);
+            }
         }
 
         ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
-        manager.requestThemeChange(pkgName, reApply);
+        manager.requestThemeChange(builder.build(), false);
     }
 }
