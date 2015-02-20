@@ -512,6 +512,7 @@ public class ThemesProvider extends ContentProvider {
                 // will be the ones to insert into the provider
                 pmThemes.remove(pkgName);
             }
+            current.close();
 
             // Check currently applied components (fonts, wallpapers etc) and verify the theme is
             // still installed. If it is not installed, set the component back to the default theme
@@ -530,6 +531,7 @@ public class ThemesProvider extends ContentProvider {
                     moveToDefault.add(component);
                 }
             }
+            mixnmatch.close();
             ThemeManager mService = (ThemeManager) getContext().getSystemService(
                     Context.THEME_SERVICE);
             mService.requestThemeChange(SYSTEM_DEFAULT, moveToDefault);
