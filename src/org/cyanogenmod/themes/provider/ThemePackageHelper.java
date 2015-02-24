@@ -36,8 +36,6 @@ import android.util.Log;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import static android.content.res.ThemeConfig.SYSTEMUI_NAVBAR_PKG;
@@ -234,6 +232,8 @@ public class ThemePackageHelper {
                 }
             }
         }
+        mixnmatch.close();
+
         ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
         manager.requestThemeChange(builder.build(), false);
 
