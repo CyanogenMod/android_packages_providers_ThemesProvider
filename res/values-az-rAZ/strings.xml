@@ -16,6 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Tema Təminedicisi</string>
+  <string name="app_name">Tema Təchizatçısı</string>
   <string name="unknown_app_name">Bilinmir</string>
+  <string name="controls_preview_button_text">Normal</string>
 </resources>
