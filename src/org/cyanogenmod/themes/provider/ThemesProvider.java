@@ -17,6 +17,7 @@ package org.cyanogenmod.themes.provider;
 
 
 import android.content.ContentProvider;
+import android.content.ContentUris;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -43,6 +44,7 @@ import android.util.Log;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.MixnMatchTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.PreviewsTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemesTable;
+import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -150,9 +152,9 @@ public class ThemesProvider extends ContentProvider {
         switch (uriType) {
         case THEMES:
             boolean processPreviews = true;
-            if (values.containsKey(KEY_PROCESS_PREVIEWS)) {
-                processPreviews = values.getAsBoolean(KEY_PROCESS_PREVIEWS);
-                values.remove(KEY_PROCESS_PREVIEWS);
+            if (values.containsKey(ThemesColumns.INSTALL_STATE)) {
+                int state = values.getAsInteger(ThemesColumns.INSTALL_STATE);
+                processPreviews = state == ThemesColumns.InstallState.INSTALLING;
             }
             id = sqlDB.insert(ThemesOpenHelper.ThemesTable.TABLE_NAME, null, values);
             if (processPreviews) {
@@ -185,8 +187,11 @@ public class ThemesProvider extends ContentProvider {
             break;
         default:
         }
-        getContext().getContentResolver().notifyChange(uri, null);
-        return Uri.parse(MixnMatchColumns.CONTENT_URI + "/" + id);
+        if (id >= 0) {
+            ContentUris.withAppendedId(uri, id);
+            getContext().getContentResolver().notifyChange(uri, null);
+        }
+        return uri;
     }
 
     @Override
@@ -272,6 +277,8 @@ public class ThemesProvider extends ContentProvider {
         case THEMES_ID:
             String pkgName = values.getAsString(ThemesColumns.PKG_NAME);
             final boolean updatePreviews = getShouldUpdatePreviews(sqlDB, pkgName);
+            final int oldInstallState =
+                    ProviderUtils.getInstallStateForTheme(getContext(), pkgName);
             rowsUpdated = sqlDB.update(ThemesTable.TABLE_NAME, values, selection, selectionArgs);
             if (updateNotTriggeredByContentProvider(values) && updatePreviews) {
                 Intent intent = new Intent(getContext(), PreviewGenerationService.class);
@@ -294,6 +301,18 @@ public class ThemesProvider extends ContentProvider {
                 intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION,
                         hasBootAni != null && hasBootAni);
                 getContext().startService(intent);
+            }
+            // Broadcast that the theme is installed if the previous state was INSTALLING and
+            // the new state is INSTALLED.
+            if (values.containsKey(ThemesColumns.INSTALL_STATE)) {
+                int newState = values.getAsInteger(ThemesColumns.INSTALL_STATE);
+                if (newState == ThemesColumns.InstallState.INSTALLED) {
+                    if (oldInstallState == ThemesColumns.InstallState.INSTALLING) {
+                        ProviderUtils.sendThemeInstalledBroadcast(getContext(), pkgName);
+                    } else if (oldInstallState == ThemesColumns.InstallState.UPDATING) {
+                        ProviderUtils.sendThemeUpdatedBroadcast(getContext(), pkgName);
+                    }
+                }
             }
             getContext().getContentResolver().notifyChange(uri, null);
             break;
@@ -555,7 +574,9 @@ public class ThemesProvider extends ContentProvider {
         private void insertThemes(Collection<PackageInfo> themesToInsert) {
             for (PackageInfo themeInfo : themesToInsert) {
                 try {
-                    ThemePackageHelper.insertPackage(getContext(), themeInfo.packageName, true);
+                    final Context context = getContext();
+                    ThemePackageHelper.insertPackage(context, themeInfo.packageName,
+                            ProviderUtils.isThemeBeingProcessed(context, themeInfo.packageName));
                 } catch (NameNotFoundException e) {
                     Log.e(TAG, "Unable to insert theme " + themeInfo.packageName, e);
                 }
@@ -565,7 +586,9 @@ public class ThemesProvider extends ContentProvider {
         private void updateThemes(List<String> themesToUpdate) {
             for (String pkgName : themesToUpdate) {
                 try {
-                    ThemePackageHelper.updatePackage(getContext(), pkgName);
+                    final Context context = getContext();
+                    ThemePackageHelper.updatePackage(context, pkgName,
+                            ProviderUtils.isThemeBeingProcessed(context, pkgName));
                 } catch (NameNotFoundException e) {
                     Log.e(TAG, "Unable to update theme " + pkgName, e);
                 }

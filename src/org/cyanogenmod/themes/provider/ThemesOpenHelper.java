@@ -36,9 +36,9 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 12;
+    private static final int DATABASE_VERSION = 13;
     private static final String DATABASE_NAME = "themes.db";
-    private static final String DEFAULT_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
+    private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
 
     private Context mContext;
 
@@ -106,6 +106,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 upgradeToVersion12(db);
                 oldVersion = 12;
             }
+            if (oldVersion == 12) {
+                upgradeToVersion13(db);
+                oldVersion = 13;
+            }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
                 dropTables(db);
@@ -130,7 +134,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         // Add default value to mixnmatch for KEY_ALARM
         ContentValues values = new ContentValues();
         values.put(MixnMatchColumns.COL_KEY, ThemesContract.MixnMatchColumns.KEY_ALARM);
-        values.put(MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME);
+        values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
         db.insert(MixnMatchTable.TABLE_NAME, null, values);
     }
 
@@ -149,20 +153,20 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         // change default package name to holo
         String changeDefaultToSystem = String.format("UPDATE %s SET %s='%s' WHERE" +
                         " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.PKG_NAME,
-                DEFAULT_PKG_NAME, ThemesColumns.PKG_NAME, "default");
+                SYSTEM_THEME_PKG_NAME, ThemesColumns.PKG_NAME, "default");
         db.execSQL(changeDefaultToSystem);
 
         if (isSystemDefault(mContext)) {
             // flag holo as default if
             String makeHoloDefault = String.format("UPDATE %s SET %s=%d WHERE" +
                             " %s='%s'", ThemesTable.TABLE_NAME, ThemesColumns.IS_DEFAULT_THEME, 1,
-                    ThemesColumns.PKG_NAME, DEFAULT_PKG_NAME);
+                    ThemesColumns.PKG_NAME, SYSTEM_THEME_PKG_NAME);
             db.execSQL(makeHoloDefault);
         }
 
         // change any existing mixnmatch values set to "default" to "holo"
         db.execSQL(String.format("UPDATE %s SET %s='%s' WHERE %s='%s'",
-                MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME,
+                MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME,
                 MixnMatchColumns.COL_VALUE, "default"));
     }
 
@@ -217,7 +221,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 final String pkgName = c.getString(0);
                 final boolean isLegacyTheme = c.getInt(1) == 1;
                 boolean hasSystemUi = false;
-                if (DEFAULT_PKG_NAME.equals(pkgName) || isLegacyTheme) {
+                if (SYSTEM_THEME_PKG_NAME.equals(pkgName) || isLegacyTheme) {
                     hasSystemUi = true;
                 } else {
                     try {
@@ -262,7 +266,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 final String pkgName = c.getString(0);
                 final boolean isLegacyTheme = c.getInt(1) == 1;
                 boolean hasSystemUi = false;
-                if (DEFAULT_PKG_NAME.equals(pkgName) || isLegacyTheme) {
+                if (SYSTEM_THEME_PKG_NAME.equals(pkgName) || isLegacyTheme) {
                     hasSystemUi = true;
                 } else {
                     try {
@@ -323,7 +327,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             while(c.moveToNext()) {
                 final String pkgName = c.getString(0);
                 int targetSdk = -1;
-                if (DEFAULT_PKG_NAME.equals(pkgName)) {
+                if (SYSTEM_THEME_PKG_NAME.equals(pkgName)) {
                     // 0 is a special value used for the system theme, not to be confused with the
                     // default theme which may not be the same as the system theme.
                     targetSdk = 0;
@@ -354,7 +358,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         "WHERE %s='%s'",
                 ThemesTable.TABLE_NAME,
                 NEW_THEME_TITLE,
-                DEFAULT_PKG_NAME,
+                SYSTEM_THEME_PKG_NAME,
                 ThemesColumns.PKG_NAME, PREV_SYSTEM_PKG_NAME);
         db.execSQL(holoToSystem);
 
@@ -378,6 +382,18 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             }
             c.close();
         }
+    }
+
+    private void upgradeToVersion13(SQLiteDatabase db) {
+        // add install_state column to themes db
+        String sql = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT %d",
+                ThemesTable.TABLE_NAME, ThemesColumns.INSTALL_STATE,
+                ThemesColumns.InstallState.UNKNOWN);
+        db.execSQL(sql);
+
+        // we need to update any existing themes with their install state
+        db.execSQL(String.format("UPDATE %s SET %s='%d'", ThemesTable.TABLE_NAME,
+                ThemesColumns.INSTALL_STATE, ThemesColumns.InstallState.INSTALLED));
     }
 
     private void dropTables(SQLiteDatabase db) {
@@ -423,14 +439,16 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         ThemesColumns.IS_LEGACY_ICONPACK + " INTEGER DEFAULT 0, " +
                         ThemesColumns.LAST_UPDATE_TIME + " INTEGER DEFAULT 0, " +
                         ThemesColumns.INSTALL_TIME + " INTEGER DEFAULT 0, " +
-                        ThemesColumns.TARGET_API + " INTEGER DEFAULT 0" +
+                        ThemesColumns.TARGET_API + " INTEGER DEFAULT 0," +
+                        ThemesColumns.INSTALL_STATE + " INTEGER DEFAULT " +
+                        ThemesColumns.InstallState.UNKNOWN +
                         ")";
 
         public static void insertSystemDefaults(SQLiteDatabase db, Context context) {
             int isDefault = isSystemDefault(context) ? 1 : 0;
             ContentValues values = new ContentValues();
             values.put(ThemesColumns.TITLE, "System");
-            values.put(ThemesColumns.PKG_NAME, DEFAULT_PKG_NAME);
+            values.put(ThemesColumns.PKG_NAME, SYSTEM_THEME_PKG_NAME);
             values.put(ThemesColumns.PRIMARY_COLOR, 0xff33b5e5);
             values.put(ThemesColumns.SECONDARY_COLOR, 0xff000000);
             values.put(ThemesColumns.AUTHOR, "Android");
@@ -450,6 +468,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.IS_LEGACY_ICONPACK, 0);
             values.put(ThemesColumns.MODIFIES_OVERLAYS, 1);
             values.put(ThemesColumns.TARGET_API, Build.VERSION.SDK_INT);
+            values.put(ThemesColumns.INSTALL_STATE, ThemesColumns.InstallState.INSTALLED);
             db.insert(TABLE_NAME, null, values);
         }
     }
@@ -466,7 +485,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             ContentValues values = new ContentValues();
             for(String key : MixnMatchColumns.ROWS) {
                 values.put(MixnMatchColumns.COL_KEY, key);
-                values.put(MixnMatchColumns.COL_VALUE, DEFAULT_PKG_NAME);
+                values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
                 db.insert(TABLE_NAME, null, values);
             }
         }
@@ -533,7 +552,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         public static void insertDefaults(Context context) {
             Intent intent = new Intent(context, PreviewGenerationService.class);
             intent.setAction(PreviewGenerationService.ACTION_INSERT);
-            intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, DEFAULT_PKG_NAME);
+            intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, SYSTEM_THEME_PKG_NAME);
             intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
             intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS, true);
             intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES, true);
