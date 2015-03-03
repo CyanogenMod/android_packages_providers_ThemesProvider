@@ -26,6 +26,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.os.Build;
 import android.provider.ThemesContract;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.MixnMatchColumns;
@@ -448,6 +449,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.IS_DEFAULT_THEME, isDefault);
             values.put(ThemesColumns.IS_LEGACY_ICONPACK, 0);
             values.put(ThemesColumns.MODIFIES_OVERLAYS, 1);
+            values.put(ThemesColumns.TARGET_API, Build.VERSION.SDK_INT);
             db.insert(TABLE_NAME, null, values);
         }
     }
