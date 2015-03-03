@@ -27,6 +27,8 @@ import android.content.UriMatcher;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ThemeUtils;
+import android.content.res.ThemeChangeRequest;
+import android.content.res.ThemeChangeRequest.RequestType;
 import android.content.res.ThemeManager;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -535,7 +537,7 @@ public class ThemesProvider extends ContentProvider {
 
             // Check currently applied components (fonts, wallpapers etc) and verify the theme is
             // still installed. If it is not installed, set the component back to the default theme
-            List<String> moveToDefault = new LinkedList<String>();
+            ThemeChangeRequest.Builder builder = new ThemeChangeRequest.Builder();
             Cursor mixnmatch = mDb.query(MixnMatchTable.TABLE_NAME, null, null, null, null, null,
                     null);
             while (mixnmatch.moveToNext()) {
@@ -547,13 +549,18 @@ public class ThemesProvider extends ContentProvider {
                 String pkg = mixnmatch.getString(mixnmatch
                         .getColumnIndex(MixnMatchColumns.COL_VALUE));
                 if (deleteList.contains(pkg)) {
-                    moveToDefault.add(component);
+                    builder.setComponent(component, SYSTEM_DEFAULT);
                 }
             }
             mixnmatch.close();
-            ThemeManager mService = (ThemeManager) getContext().getSystemService(
-                    Context.THEME_SERVICE);
-            mService.requestThemeChange(SYSTEM_DEFAULT, moveToDefault);
+
+            builder.setRequestType(RequestType.THEME_REMOVED);
+            ThemeChangeRequest request = builder.build();
+            if (request.getNumChangesRequested() > 0) {
+                ThemeManager mService = (ThemeManager) getContext().getSystemService(
+                        Context.THEME_SERVICE);
+                mService.requestThemeChange(request, false);
+            }
 
             // Update the database after we revert to default
             deleteThemes(deleteList);

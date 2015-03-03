@@ -26,6 +26,7 @@ import android.content.pm.ThemeUtils;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.content.res.ThemeChangeRequest;
+import android.content.res.ThemeChangeRequest.RequestType;
 import android.content.res.ThemeConfig;
 import android.content.res.ThemeManager;
 import android.database.Cursor;
@@ -244,6 +245,7 @@ public class ThemePackageHelper {
         }
         mixnmatch.close();
 
+        builder.setRequestType(RequestType.THEME_REMOVED);
         ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
         manager.requestThemeChange(builder.build(), false);
 
@@ -359,6 +361,7 @@ public class ThemePackageHelper {
             }
         }
 
+        builder.setRequestType(RequestType.THEME_UPDATED);
         ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
         manager.requestThemeChange(builder.build(), false);
     }
