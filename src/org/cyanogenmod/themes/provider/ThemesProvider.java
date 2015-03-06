@@ -305,6 +305,17 @@ public class ThemesProvider extends ContentProvider {
             getContext().getContentResolver().notifyChange(uri, null);
             break;
         case MIXNMATCH:
+            // Make the current value the previous value
+            String prevValue = ProviderUtils.getCurrentThemeForComponent(getContext(),
+                    selection, selectionArgs);
+            String newValue = values.getAsString(MixnMatchColumns.COL_VALUE);
+            if (prevValue != null &&
+                    prevValue.equals(newValue)) {
+                // Component re-applied?  Most likely so remove the update time
+                values.remove(MixnMatchColumns.COL_UPDATE_TIME);
+            } else if (prevValue != null) {
+                values.put(MixnMatchColumns.COL_PREV_VALUE, prevValue);
+            }
             rowsUpdated = sqlDB.update(MixnMatchTable.TABLE_NAME, values, selection, selectionArgs);
             getContext().getContentResolver().notifyChange(uri, null);
             break;

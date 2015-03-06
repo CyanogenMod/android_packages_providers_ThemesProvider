@@ -36,7 +36,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 13;
+    private static final int DATABASE_VERSION = 14;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
 
@@ -109,6 +109,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 12) {
                 upgradeToVersion13(db);
                 oldVersion = 13;
+            }
+            if (oldVersion == 13) {
+                upgradeToVersion14(db);
+                oldVersion = 14;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -396,6 +400,18 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 ThemesColumns.INSTALL_STATE, ThemesColumns.InstallState.INSTALLED));
     }
 
+    private void upgradeToVersion14(SQLiteDatabase db) {
+        // add previous_value column to mixnmatch db
+        String sql = String.format("ALTER TABLE %s ADD COLUMN %s TEXT",
+                MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_PREV_VALUE);
+        db.execSQL(sql);
+
+        // add update_time column to mixnmatch db
+        sql = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT 0",
+                MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_UPDATE_TIME);
+        db.execSQL(sql);
+    }
+
     private void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS " + ThemesTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MixnMatchTable.TABLE_NAME);
@@ -474,18 +490,22 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
     }
 
     public static class MixnMatchTable {
-        protected static final String TABLE_NAME = "mixnmatch";
+        public static final String TABLE_NAME = "mixnmatch";
         private static final String MIXNMATCH_TABLE_CREATE =
                 "CREATE TABLE " + TABLE_NAME + " (" +
                         MixnMatchColumns.COL_KEY + " TEXT PRIMARY KEY," +
-                        MixnMatchColumns.COL_VALUE + " TEXT" +
+                        MixnMatchColumns.COL_VALUE + " TEXT," +
+                        MixnMatchColumns.COL_PREV_VALUE + " TEXT," +
+                        MixnMatchColumns.COL_UPDATE_TIME + " INTEGER DEFAULT 0" +
                         ")";
 
         public static void insertDefaults(SQLiteDatabase db) {
             ContentValues values = new ContentValues();
+            long updateTime = System.currentTimeMillis();
+            values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
+            values.put(MixnMatchColumns.COL_UPDATE_TIME, updateTime);
             for(String key : MixnMatchColumns.ROWS) {
                 values.put(MixnMatchColumns.COL_KEY, key);
-                values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
                 db.insert(TABLE_NAME, null, values);
             }
         }
