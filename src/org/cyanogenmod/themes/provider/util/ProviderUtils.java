@@ -68,6 +68,8 @@ public class ProviderUtils {
      * @return
      */
     public static int getInstallStateForTheme(Context context, String pkgName) {
+        if (context == null || pkgName == null) return ThemesColumns.InstallState.UNKNOWN;
+
         String[] projection = new String[] { ThemesColumns.INSTALL_STATE };
         String selection = ThemesColumns.PKG_NAME + "=?";
         String[] selectionArgs = new String[] { pkgName };
