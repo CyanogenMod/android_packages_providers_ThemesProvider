@@ -150,9 +150,6 @@ public class ThemePackageHelper {
             } else if (pi.isLegacyIconPackApk) {
                 updateLegacyIconPackInternal(context, pi, capabilities, isProcessing);
             }
-
-            // We should reapply any components that are currently applied for this theme.
-            reapplyInstalledComponentsForTheme(context, pkgName);
         }
     }
 
@@ -160,6 +157,10 @@ public class ThemePackageHelper {
             Map<String, Boolean> capabilities, boolean isProcessing) {
         ThemeInfo info = pi.themeInfo;
         boolean isPresentableTheme = ThemePackageHelper.isPresentableTheme(capabilities);
+        final int oldInstallState =
+                ProviderUtils.getInstallStateForTheme(context, pi.packageName);
+        final int newState = isProcessing ? InstallState.UPDATING : InstallState.INSTALLED;
+
         ContentValues values = new ContentValues();
         values.put(ThemesColumns.PKG_NAME, pi.packageName);
         values.put(ThemesColumns.TITLE, info.name);
@@ -172,8 +173,7 @@ public class ThemePackageHelper {
         values.put(ThemesColumns.LAST_UPDATE_TIME, pi.lastUpdateTime);
         values.put(ThemesColumns.INSTALL_TIME, pi.firstInstallTime);
         values.put(ThemesColumns.TARGET_API, pi.applicationInfo.targetSdkVersion);
-        values.put(ThemesColumns.INSTALL_STATE,
-                isProcessing ? InstallState.UPDATING : InstallState.INSTALLED);
+        values.put(ThemesColumns.INSTALL_STATE, newState);
 
         // Insert theme capabilities
         insertCapabilities(capabilities, values);
@@ -181,6 +181,18 @@ public class ThemePackageHelper {
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
+
+        // Broadcast that the theme is installed if the previous state was INSTALLING and
+        // the new state is INSTALLED.
+        if (newState == ThemesColumns.InstallState.INSTALLED) {
+            if (oldInstallState == ThemesColumns.InstallState.INSTALLING) {
+                ProviderUtils.sendThemeInstalledBroadcast(context, pi.packageName);
+            } else if (oldInstallState == ThemesColumns.InstallState.UPDATING) {
+                ProviderUtils.sendThemeUpdatedBroadcast(context, pi.packageName);
+                // We should reapply any components that are currently applied for this theme.
+                reapplyInstalledComponentsForTheme(context, pi.packageName);
+            }
+        }
     }
 
     private static void updateSystemPackageInternal(Context context) {
