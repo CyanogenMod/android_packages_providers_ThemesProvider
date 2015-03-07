@@ -279,8 +279,6 @@ public class ThemesProvider extends ContentProvider {
         case THEMES_ID:
             String pkgName = values.getAsString(ThemesColumns.PKG_NAME);
             final boolean updatePreviews = getShouldUpdatePreviews(sqlDB, pkgName);
-            final int oldInstallState =
-                    ProviderUtils.getInstallStateForTheme(getContext(), pkgName);
             rowsUpdated = sqlDB.update(ThemesTable.TABLE_NAME, values, selection, selectionArgs);
             if (updateNotTriggeredByContentProvider(values) && updatePreviews) {
                 Intent intent = new Intent(getContext(), PreviewGenerationService.class);
@@ -303,18 +301,6 @@ public class ThemesProvider extends ContentProvider {
                 intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION,
                         hasBootAni != null && hasBootAni);
                 getContext().startService(intent);
-            }
-            // Broadcast that the theme is installed if the previous state was INSTALLING and
-            // the new state is INSTALLED.
-            if (values.containsKey(ThemesColumns.INSTALL_STATE)) {
-                int newState = values.getAsInteger(ThemesColumns.INSTALL_STATE);
-                if (newState == ThemesColumns.InstallState.INSTALLED) {
-                    if (oldInstallState == ThemesColumns.InstallState.INSTALLING) {
-                        ProviderUtils.sendThemeInstalledBroadcast(getContext(), pkgName);
-                    } else if (oldInstallState == ThemesColumns.InstallState.UPDATING) {
-                        ProviderUtils.sendThemeUpdatedBroadcast(getContext(), pkgName);
-                    }
-                }
             }
             getContext().getContentResolver().notifyChange(uri, null);
             break;
