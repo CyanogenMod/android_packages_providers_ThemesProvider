@@ -33,20 +33,19 @@ public class AppReceiver extends BroadcastReceiver {
         final String pkgName = uri != null ? uri.getSchemeSpecificPart() : null;
         final boolean isReplacing = intent.getExtras().getBoolean(Intent.EXTRA_REPLACING, false);
         final String action = intent.getAction();
-        final boolean themeProcessing;
         try {
+            // All themes/icon packs go to the theme service for processing now so assume
+            // isProcessing is always true when installing/replacing
             if (Intent.ACTION_PACKAGE_ADDED.equals(action) && !isReplacing) {
-                themeProcessing = ProviderUtils.isThemeBeingProcessed(context, pkgName);
-                ThemePackageHelper.insertPackage(context, pkgName, themeProcessing);
+                ThemePackageHelper.insertPackage(context, pkgName, true);
             } else if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)) {
                 ThemePackageHelper.removePackage(context, pkgName);
             } else if (Intent.ACTION_PACKAGE_REPLACED.equals(action)) {
-                themeProcessing = ProviderUtils.isThemeBeingProcessed(context, pkgName);
                 if (ProviderUtils.themeExistsInProvider(context, pkgName)) {
-                    ThemePackageHelper.updatePackage(context, pkgName, themeProcessing);
+                    ThemePackageHelper.updatePackage(context, pkgName, true);
                 } else {
                     // Edge case where app was not a theme in previous install
-                    ThemePackageHelper.insertPackage(context, pkgName, themeProcessing);
+                    ThemePackageHelper.insertPackage(context, pkgName, true);
                 }
             } else if (Intent.ACTION_THEME_RESOURCES_CACHED.equals(action)) {
                 final String themePkgName = intent.getStringExtra(Intent.EXTRA_THEME_PACKAGE_NAME);

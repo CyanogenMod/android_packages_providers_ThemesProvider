@@ -194,11 +194,6 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 Intent intent = new Intent(mContext, PreviewGenerationService.class);
                 intent.setAction(PreviewGenerationService.ACTION_INSERT);
                 intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, c.getString(0));
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, c.getInt(1) == 1);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS, c.getInt(2) == 1);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES, c.getInt(3) == 1);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER, c.getInt(4) == 1);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION, c.getInt(5) == 1);
                 mContext.startService(intent);
             }
             c.close();
@@ -245,7 +240,6 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                     Intent intent = new Intent(mContext, PreviewGenerationService.class);
                     intent.setAction(PreviewGenerationService.ACTION_INSERT);
                     intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, pkgName);
-                    intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
                     mContext.startService(intent);
                 }
             }
@@ -286,7 +280,6 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                     Intent intent = new Intent(mContext, PreviewGenerationService.class);
                     intent.setAction(PreviewGenerationService.ACTION_INSERT);
                     intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, pkgName);
-                    intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
                     mContext.startService(intent);
                 }
             }
@@ -573,11 +566,6 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             Intent intent = new Intent(context, PreviewGenerationService.class);
             intent.setAction(PreviewGenerationService.ACTION_INSERT);
             intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, SYSTEM_THEME_PKG_NAME);
-            intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI, true);
-            intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS, true);
-            intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES, true);
-            intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER, true);
-            intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION, true);
             context.startService(intent);
         }
     }

@@ -18,6 +18,7 @@ package org.cyanogenmod.themes.provider;
 import android.app.IntentService;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
@@ -48,11 +49,6 @@ public class PreviewGenerationService extends IntentService {
     public static final String ACTION_INSERT = "org.cyanogenmod.themes.provider.action.insert";
     public static final String ACTION_UPDATE = "org.cyanogenmod.themes.provider.action.update";
     public static final String EXTRA_PKG_NAME = "extra_pkg_name";
-    public static final String EXTRA_HAS_SYSTEMUI = "extra_has_system_ui";
-    public static final String EXTRA_HAS_ICONS = "extra_has_icons";
-    public static final String EXTRA_HAS_WALLPAPER = "extra_has_wallpaper";
-    public static final String EXTRA_HAS_STYLES = "extra_has_styles";
-    public static final String EXTRA_HAS_BOOTANIMATION = "extra_has_bootanimation";
 
     private static final String TAG = PreviewGenerationService.class.getName();
 
@@ -69,12 +65,25 @@ public class PreviewGenerationService extends IntentService {
 
         final Bundle extras = intent.getExtras();
         String pkgName = extras.getString(EXTRA_PKG_NAME);
-        boolean hasSystemUi = extras.getBoolean(EXTRA_HAS_SYSTEMUI, false);
-        boolean hasIcons = extras.getBoolean(EXTRA_HAS_ICONS, false);
-        boolean hasWallpaper = extras.getBoolean(EXTRA_HAS_WALLPAPER, false);
-        boolean hasStyles = extras.getBoolean(EXTRA_HAS_STYLES, false);
-        boolean hasBootanimation = extras.getBoolean(EXTRA_HAS_BOOTANIMATION, false);
+        boolean hasSystemUi = false;
+        boolean hasIcons = false;
+        boolean hasWallpaper = false;
+        boolean hasStyles = false;
+        boolean hasBootanimation = false;
         boolean isSystemTheme = ThemeConfig.SYSTEM_DEFAULT.equals(pkgName);
+        Cursor c = queryTheme(this, pkgName);
+        if (c != null) {
+            if (c.moveToFirst()) {
+                hasSystemUi = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_STATUS_BAR)) == 1;
+                hasIcons = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_ICONS)) == 1;
+                hasWallpaper = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_LAUNCHER)) == 1 ||
+                        c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_LOCKSCREEN)) == 1;
+                hasStyles = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_OVERLAYS)) == 1;
+                hasBootanimation =
+                        c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_BOOT_ANIM)) == 1;
+            }
+            c.close();
+        }
         final String action = intent.getAction();
         if (ACTION_INSERT.equals(action) || ACTION_UPDATE.equals(action)) {
             PackageInfo info = null;
@@ -227,5 +236,12 @@ public class PreviewGenerationService extends IntentService {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         bmp.compress(format, quality, out);
         return out.toByteArray();
+    }
+
+    private static Cursor queryTheme(Context context, String pkgName) {
+        String selection = ThemesColumns.PKG_NAME + "=?";
+        String[] selectionArgs = { pkgName };
+        return context.getContentResolver().query(ThemesColumns.CONTENT_URI, null,
+                selection, selectionArgs, null);
     }
 }
