@@ -153,10 +153,10 @@ public class ThemesProvider extends ContentProvider {
         long id = 0;
         switch (uriType) {
         case THEMES:
-            boolean processPreviews = true;
+            boolean processPreviews = false;
             if (values.containsKey(ThemesColumns.INSTALL_STATE)) {
                 int state = values.getAsInteger(ThemesColumns.INSTALL_STATE);
-                processPreviews = state == ThemesColumns.InstallState.INSTALLING;
+                processPreviews = state == ThemesColumns.InstallState.INSTALLED;
             }
             id = sqlDB.insert(ThemesOpenHelper.ThemesTable.TABLE_NAME, null, values);
             if (processPreviews) {
@@ -164,21 +164,6 @@ public class ThemesProvider extends ContentProvider {
                 intent.setAction(PreviewGenerationService.ACTION_INSERT);
                 intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME,
                         values.getAsString(ThemesColumns.PKG_NAME));
-                Boolean hasSystemUi = values.getAsBoolean(ThemesColumns.MODIFIES_STATUS_BAR);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI,
-                        hasSystemUi != null && hasSystemUi);
-                Boolean hasIcons = values.getAsBoolean(ThemesColumns.MODIFIES_ICONS);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS,
-                        hasIcons != null && hasIcons);
-                Boolean hasStyles = values.getAsBoolean(ThemesColumns.MODIFIES_OVERLAYS);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES,
-                        hasStyles != null && hasStyles);
-                Boolean hasWallpaper = values.getAsBoolean(ThemesColumns.MODIFIES_LAUNCHER);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER,
-                        hasWallpaper != null && hasWallpaper);
-                Boolean hasBootAni = values.getAsBoolean(ThemesColumns.MODIFIES_BOOT_ANIM);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION,
-                        hasBootAni != null && hasBootAni);
                 getContext().startService(intent);
             }
             break;
@@ -278,28 +263,16 @@ public class ThemesProvider extends ContentProvider {
         case THEMES:
         case THEMES_ID:
             String pkgName = values.getAsString(ThemesColumns.PKG_NAME);
-            final boolean updatePreviews = getShouldUpdatePreviews(sqlDB, pkgName);
+            boolean updatePreviews = false;
+            if (values.containsKey(ThemesColumns.INSTALL_STATE)) {
+                int state = values.getAsInteger(ThemesColumns.INSTALL_STATE);
+                updatePreviews = state == ThemesColumns.InstallState.INSTALLED;
+            }
             rowsUpdated = sqlDB.update(ThemesTable.TABLE_NAME, values, selection, selectionArgs);
             if (updateNotTriggeredByContentProvider(values) && updatePreviews) {
                 Intent intent = new Intent(getContext(), PreviewGenerationService.class);
                 intent.setAction(PreviewGenerationService.ACTION_UPDATE);
-                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME,
-                        values.getAsString(ThemesColumns.PKG_NAME));
-                Boolean hasSystemUi = values.getAsBoolean(ThemesColumns.MODIFIES_STATUS_BAR);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_SYSTEMUI,
-                        hasSystemUi != null && hasSystemUi);
-                Boolean hasIcons = values.getAsBoolean(ThemesColumns.MODIFIES_ICONS);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_ICONS,
-                        hasIcons != null && hasIcons);
-                Boolean hasStyles = values.getAsBoolean(ThemesColumns.MODIFIES_OVERLAYS);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_STYLES,
-                        hasStyles != null && hasStyles);
-                Boolean hasWallpaper = values.getAsBoolean(ThemesColumns.MODIFIES_LAUNCHER);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_WALLPAPER,
-                        hasWallpaper != null && hasWallpaper);
-                Boolean hasBootAni = values.getAsBoolean(ThemesColumns.MODIFIES_BOOT_ANIM);
-                intent.putExtra(PreviewGenerationService.EXTRA_HAS_BOOTANIMATION,
-                        hasBootAni != null && hasBootAni);
+                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, pkgName);
                 getContext().startService(intent);
             }
             getContext().getContentResolver().notifyChange(uri, null);
