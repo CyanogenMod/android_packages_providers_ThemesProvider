@@ -16,7 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Teemade Pakkuja</string>
-  <string name="unknown_app_name">Teadmata</string>
-  <string name="controls_preview_button_text">Tavaline</string>
+  <string name="app_name">Themes Provider</string>
+  <string name="unknown_app_name">Unknown</string>
+  <string name="controls_preview_button_text">Normal</string>
 </resources>
