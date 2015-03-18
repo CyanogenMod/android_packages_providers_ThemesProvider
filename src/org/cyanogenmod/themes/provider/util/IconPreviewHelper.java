@@ -156,8 +156,7 @@ public class IconPreviewHelper {
 
     private Drawable getComposedIcon(Resources res, Drawable baseIcon) {
         ComposedIconInfo iconInfo = mIconPackHelper.getComposedIconInfo();
-        if (res != null && iconInfo != null && (iconInfo.iconBacks != null ||
-                iconInfo.iconMask != 0 || iconInfo.iconUpon != 0)) {
+        if (res != null && IconPackHelper.shouldComposeIcon(iconInfo)) {
             return IconPackHelper.IconCustomizer.getComposedIconDrawable(baseIcon, res, iconInfo);
         }
         return baseIcon;
