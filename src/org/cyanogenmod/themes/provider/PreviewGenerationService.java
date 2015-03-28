@@ -74,7 +74,10 @@ public class PreviewGenerationService extends IntentService {
         Cursor c = queryTheme(this, pkgName);
         if (c != null) {
             if (c.moveToFirst()) {
-                hasSystemUi = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_STATUS_BAR)) == 1;
+                // mods_status_bar was added in version 7 of the database so we need to make sure
+                // it exists when trying to get the int value from the row.
+                final int sysUiIndex = c.getColumnIndex(ThemesColumns.MODIFIES_STATUS_BAR);
+                hasSystemUi = sysUiIndex >= 0 && c.getInt(sysUiIndex) == 1;
                 hasIcons = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_ICONS)) == 1;
                 hasWallpaper = c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_LAUNCHER)) == 1 ||
                         c.getInt(c.getColumnIndex(ThemesColumns.MODIFIES_LOCKSCREEN)) == 1;
