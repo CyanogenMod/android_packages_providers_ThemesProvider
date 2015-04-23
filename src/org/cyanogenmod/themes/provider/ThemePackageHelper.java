@@ -230,7 +230,7 @@ public class ThemePackageHelper {
         // Check currently applied components (fonts, wallpapers etc) and verify the theme is still
         // installed. If it is not installed, we need to set the component back to the default theme
         ThemeChangeRequest.Builder builder = new ThemeChangeRequest.Builder();
-        String defaultPkgName = ThemeUtils.getDefaultThemePackageName(context);
+        Map<String, String> defaultComponents = ThemeUtils.getDefaultComponents(context);
 
         Cursor mixnmatch = context.getContentResolver().query(MixnMatchColumns.CONTENT_URI, null,
                 null, null, null);
@@ -241,7 +241,7 @@ public class ThemePackageHelper {
                     .mixNMatchKeyToComponent(mixnmatchKey);
             String pkg = mixnmatch.getString(mixnmatch.getColumnIndex(MixnMatchColumns.COL_VALUE));
             if (pkgToRemove.equals(pkg)) {
-                builder.setComponent(component, defaultPkgName);
+                builder.setComponent(component, defaultComponents.get(component));
             }
         }
 
@@ -250,10 +250,12 @@ public class ThemePackageHelper {
         final ThemeConfig themeConfig = config != null ? config.themeConfig : null;
         if (themeConfig != null) {
             final Map<String, ThemeConfig.AppTheme> themes = themeConfig.getAppThemes();
+            final String defaultOverlayPkgName
+                    = defaultComponents.get(ThemesColumns.MODIFIES_OVERLAYS);
             for (String appPkgName : themes.keySet()) {
                 if (ThemeUtils.isPerAppThemeComponent(appPkgName) &&
                         pkgToRemove.equals(themes.get(appPkgName).getOverlayPkgName())) {
-                    builder.setAppOverlay(appPkgName, defaultPkgName);
+                    builder.setAppOverlay(appPkgName, defaultOverlayPkgName);
                 }
             }
         }
