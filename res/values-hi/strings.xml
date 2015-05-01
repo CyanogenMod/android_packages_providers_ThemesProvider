@@ -16,7 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">دابینکردنی تیمی</string>
-  <string name="unknown_app_name">نەناسراو</string>
-  <string name="controls_preview_button_text">ئاسایی</string>
+  <string name="app_name">थीम प्रदाता</string>
+  <string name="unknown_app_name">अज्ञात</string>
+  <string name="controls_preview_button_text">सामान्य</string>
 </resources>
