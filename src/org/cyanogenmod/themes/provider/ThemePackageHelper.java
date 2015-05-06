@@ -210,7 +210,6 @@ public class ThemePackageHelper {
         CharSequence labelName = pm.getApplicationLabel(pi.applicationInfo);
         if (labelName == null) labelName = context.getString(R.string.unknown_app_name);
 
-        boolean isPresentableTheme = ThemePackageHelper.isPresentableTheme(capabilities);
         ContentValues values = new ContentValues();
         values.put(ThemesColumns.PKG_NAME, pi.packageName);
         values.put(ThemesColumns.TITLE, labelName.toString());
@@ -224,6 +223,11 @@ public class ThemePackageHelper {
         String where = ThemesColumns.PKG_NAME + "=?";
         String[] args = { pi.packageName };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
+
+        if (!isProcessing) {
+            // We should reapply any components that are currently applied for this theme.
+            reapplyInstalledComponentsForTheme(context, pi.packageName);
+        }
     }
 
     public static void removePackage(Context context, String pkgToRemove) {
