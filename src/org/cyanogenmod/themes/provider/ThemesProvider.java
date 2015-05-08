@@ -47,6 +47,7 @@ import org.cyanogenmod.themes.provider.ThemesOpenHelper.PreviewsTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemesTable;
 import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -107,13 +108,23 @@ public class ThemesProvider extends ContentProvider {
             SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
 
             // Get the theme's _id and delete preview images
-            String[] columns = new String[] { ThemesColumns._ID };
+            int idx = -1;
+            String[] columns = new String[] { ThemesColumns._ID, ThemesColumns.PKG_NAME };
             Cursor c = sqlDB.query(ThemesTable.TABLE_NAME, columns, selection,
                     selectionArgs, null, null, null);
             if (c == null) return 0;
             if (c.moveToFirst()) {
+                idx = c.getColumnIndex(ThemesColumns._ID);
                 sqlDB.delete(PreviewsTable.TABLE_NAME,
-                        PreviewColumns.THEME_ID + "=" + c.getInt(0), null);
+                        PreviewColumns.THEME_ID + "=" + c.getInt(idx), null);
+
+                // Remove preview files associated with theme
+                idx = c.getColumnIndex(ThemesColumns.PKG_NAME);
+                String pkgName = c.getString(idx);
+                String filesDir = getContext().getFilesDir().getAbsolutePath();
+                String themePreviewsDir = filesDir + File.separator +
+                        PreviewGenerationService.PREVIEWS_DIR + File.separator + pkgName;
+                PreviewGenerationService.clearThemePreviewsDir(themePreviewsDir);
             }
             c.close();
 

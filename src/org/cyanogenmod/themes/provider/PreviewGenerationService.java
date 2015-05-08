@@ -27,6 +27,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.os.Bundle;
+import android.os.FileUtils;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.PreviewColumns;
 import android.util.Log;
@@ -41,6 +42,8 @@ import org.cyanogenmod.themes.provider.util.WallpaperPreviewGenerator;
 import org.cyanogenmod.themes.provider.util.WallpaperPreviewGenerator.WallpaperItems;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -51,6 +54,8 @@ public class PreviewGenerationService extends IntentService {
     public static final String ACTION_INSERT = "org.cyanogenmod.themes.provider.action.insert";
     public static final String ACTION_UPDATE = "org.cyanogenmod.themes.provider.action.update";
     public static final String EXTRA_PKG_NAME = "extra_pkg_name";
+
+    public static final String PREVIEWS_DIR = "previews";
 
     private static final String TAG = PreviewGenerationService.class.getName();
 
@@ -169,33 +174,52 @@ public class PreviewGenerationService extends IntentService {
 
             List<ContentValues> themeValues = new ArrayList<ContentValues>();
             ContentValues values = null;
+            String filesDir = this.getFilesDir().getAbsolutePath();
+            String themePreviewsDir =
+                    filesDir + File.separator + PREVIEWS_DIR + File.separator + pkgName;
+            String path = null;
+            clearThemePreviewsDir(themePreviewsDir);
+
             if (items != null) {
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_BACKGROUND,
-                        getBitmapBlobPng(items.statusbarBackground));
+                path = compressAndSavePng(items.statusbarBackground, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_BACKGROUND);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BACKGROUND,
+                        path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON,
-                        getBitmapBlobPng(items.bluetoothIcon));
+                path = compressAndSavePng(items.bluetoothIcon, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON,
+                        path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_WIFI_ICON,
-                        getBitmapBlobPng(items.wifiIcon));
+                path = compressAndSavePng(items.wifiIcon, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_WIFI_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_WIFI_ICON, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON,
-                        getBitmapBlobPng(items.signalIcon));
+                path = compressAndSavePng(items.signalIcon, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON,
+                        path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT,
-                        getBitmapBlobPng(items.batteryPortrait));
+                path = compressAndSavePng(items.batteryPortrait, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT,
+                        path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE,
-                        getBitmapBlobPng(items.batteryLandscape));
+                path = compressAndSavePng(items.batteryLandscape, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE);
+                values = createPreviewEntryString(id,
+                        PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE,
-                        getBitmapBlobPng(items.batteryCircle));
+                path = compressAndSavePng(items.batteryCircle, filesDir, pkgName,
+                        PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE,
+                        path);
                 themeValues.add(values);
 
                 values = createPreviewEntryInt(id, PreviewColumns.KEY_STATUSBAR_CLOCK_TEXT_COLOR,
@@ -206,64 +230,82 @@ public class PreviewGenerationService extends IntentService {
                         PreviewColumns.KEY_STATUSBAR_WIFI_COMBO_MARGIN_END, items.wifiMarginEnd);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_NAVBAR_BACKGROUND,
-                        getBitmapBlobPng(items.navbarBackground));
+                path = compressAndSavePng(items.navbarBackground, filesDir, pkgName,
+                        PreviewColumns.KEY_NAVBAR_BACKGROUND);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_BACKGROUND, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_NAVBAR_BACK_BUTTON,
-                        getBitmapBlobPng(items.navbarBack));
+                path = compressAndSavePng(items.navbarBack, filesDir, pkgName,
+                        PreviewColumns.KEY_NAVBAR_BACK_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_BACK_BUTTON, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_NAVBAR_HOME_BUTTON,
-                        getBitmapBlobPng(items.navbarHome));
+                path = compressAndSavePng(items.navbarHome, filesDir, pkgName,
+                        PreviewColumns.KEY_NAVBAR_HOME_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_HOME_BUTTON, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_NAVBAR_RECENT_BUTTON,
-                        getBitmapBlobPng(items.navbarRecent));
+                path = compressAndSavePng(items.navbarRecent, filesDir, pkgName,
+                        PreviewColumns.KEY_NAVBAR_RECENT_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_RECENT_BUTTON,
+                        path);
                 themeValues.add(values);
             }
             if (icons != null) {
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_ICON_PREVIEW_1,
-                        getBitmapBlobPng(icons.icon1));
+                path = compressAndSavePng(icons.icon1, filesDir, pkgName,
+                        PreviewColumns.KEY_ICON_PREVIEW_1);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_1, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_ICON_PREVIEW_2,
-                        getBitmapBlobPng(icons.icon2));
+                path = compressAndSavePng(icons.icon2, filesDir, pkgName,
+                        PreviewColumns.KEY_ICON_PREVIEW_2);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_2, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_ICON_PREVIEW_3,
-                        getBitmapBlobPng(icons.icon3));
+                path = compressAndSavePng(icons.icon3, filesDir, pkgName,
+                        PreviewColumns.KEY_ICON_PREVIEW_3);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_3, path);
                 themeValues.add(values);
             }
             if (wallpaperItems != null) {
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_WALLPAPER_PREVIEW,
-                        getBitmapBlobJpg(wallpaperItems.wpPreview));
+                path = compressAndSaveJpg(wallpaperItems.wpPreview, filesDir, pkgName,
+                        PreviewColumns.KEY_WALLPAPER_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_WALLPAPER_PREVIEW, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_WALLPAPER_THUMBNAIL,
-                        getBitmapBlobPng(wallpaperItems.wpThumbnail));
+                path = compressAndSavePng(wallpaperItems.wpThumbnail, filesDir, pkgName,
+                        PreviewColumns.KEY_WALLPAPER_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_WALLPAPER_THUMBNAIL, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_LOCK_WALLPAPER_PREVIEW,
-                        getBitmapBlobJpg(wallpaperItems.lsPreview));
+                path = compressAndSaveJpg(wallpaperItems.lsPreview, filesDir, pkgName,
+                        PreviewColumns.KEY_LOCK_WALLPAPER_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_LOCK_WALLPAPER_PREVIEW,
+                        path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_LOCK_WALLPAPER_THUMBNAIL,
-                        getBitmapBlobPng(wallpaperItems.lsThumbnail));
+                path = compressAndSavePng(wallpaperItems.lsThumbnail, filesDir, pkgName,
+                        PreviewColumns.KEY_LOCK_WALLPAPER_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_LOCK_WALLPAPER_THUMBNAIL,
+                        path);
                 themeValues.add(values);
             }
             if (styleItems != null) {
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STYLE_THUMBNAIL,
-                        getBitmapBlobPng(styleItems.thumbnail));
+                path = compressAndSavePng(styleItems.thumbnail, filesDir, pkgName,
+                        PreviewColumns.KEY_STYLE_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STYLE_THUMBNAIL, path);
                 themeValues.add(values);
 
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_STYLE_PREVIEW,
-                        getBitmapBlobPng(styleItems.preview));
+                path = compressAndSavePng(styleItems.preview, filesDir, pkgName,
+                        PreviewColumns.KEY_STYLE_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_STYLE_PREVIEW, path);
                 themeValues.add(values);
             }
             if (bootAnim != null) {
-                values = createPreviewEntryBlob(id, PreviewColumns.KEY_BOOTANIMATION_THUMBNAIL,
-                        getBitmapBlobPng(bootAnim));
+                path = compressAndSavePng(bootAnim, filesDir, pkgName,
+                        PreviewColumns.KEY_BOOTANIMATION_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.KEY_BOOTANIMATION_THUMBNAIL,
+                        path);
                 themeValues.add(values);
             }
 
@@ -282,7 +324,7 @@ public class PreviewGenerationService extends IntentService {
         }
     }
 
-    private static ContentValues createPreviewEntryBlob(int id, String key, byte[] value) {
+    private static ContentValues createPreviewEntryInt(int id, String key, int value) {
         ContentValues values = new ContentValues();
         values.put(PreviewColumns.THEME_ID, id);
         values.put(PreviewColumns.COL_KEY, key);
@@ -291,13 +333,25 @@ public class PreviewGenerationService extends IntentService {
         return values;
     }
 
-    private static ContentValues createPreviewEntryInt(int id, String key, int value) {
+    private static ContentValues createPreviewEntryString(int id, String key, String value) {
         ContentValues values = new ContentValues();
         values.put(PreviewColumns.THEME_ID, id);
         values.put(PreviewColumns.COL_KEY, key);
         values.put(PreviewColumns.COL_VALUE, value);
 
         return values;
+    }
+
+    private static String compressAndSavePng(Bitmap bmp, String baseDir, String pkgName,
+                                               String fileName) {
+        byte[] image = getBitmapBlobPng(bmp);
+        return saveCompressedImage(image, baseDir, pkgName, fileName);
+    }
+
+    private static String compressAndSaveJpg(Bitmap bmp, String baseDir, String pkgName,
+                                             String fileName) {
+        byte[] image = getBitmapBlobJpg(bmp);
+        return saveCompressedImage(image, baseDir, pkgName, fileName);
     }
 
     private static byte[] getBitmapBlobPng(Bitmap bmp) {
@@ -315,10 +369,59 @@ public class PreviewGenerationService extends IntentService {
         return out.toByteArray();
     }
 
+    private static String saveCompressedImage(byte[] image, String baseDir, String pkgName,
+                                              String fileName) {
+        // Create relevant directories
+        String previewsDir = baseDir + File.separator + PREVIEWS_DIR;
+        String pkgDir = previewsDir + File.separator + pkgName;
+        String filePath = pkgDir + File.separator + fileName;
+        createDirIfNotExists(previewsDir);
+        createDirIfNotExists(pkgDir);
+
+        // Save blob
+        FileOutputStream outputStream;
+        final File pkgPreviewDir = new File(pkgDir);
+        try {
+            File outFile = new File(pkgPreviewDir, fileName);
+            outputStream = new FileOutputStream(outFile);
+            outputStream.write(image);
+            outputStream.close();
+            FileUtils.setPermissions(outFile,
+                    FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH,
+                    -1, -1);
+        } catch (Exception e) {
+            Log.w(TAG, "Unable to save preview " + pkgName + File.separator + fileName, e);
+            filePath = null;
+        }
+
+        return filePath;
+    }
+
+    public static void clearThemePreviewsDir(String path) {
+        File directory = new File(path);
+        FileUtils.deleteContents(directory);
+        directory.delete();
+    }
+
     private static Cursor queryTheme(Context context, String pkgName) {
         String selection = ThemesColumns.PKG_NAME + "=?";
         String[] selectionArgs = { pkgName };
         return context.getContentResolver().query(ThemesColumns.CONTENT_URI, null,
                 selection, selectionArgs, null);
+    }
+
+    private static boolean dirExists(String dirPath) {
+        final File dir = new File(dirPath);
+        return dir.exists() && dir.isDirectory();
+    }
+
+    private static void createDirIfNotExists(String dirPath) {
+        if (!dirExists(dirPath)) {
+            File dir = new File(dirPath);
+            if (dir.mkdir()) {
+                FileUtils.setPermissions(dir, FileUtils.S_IRWXU |
+                        FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH, -1, -1);
+            }
+        }
     }
 }
