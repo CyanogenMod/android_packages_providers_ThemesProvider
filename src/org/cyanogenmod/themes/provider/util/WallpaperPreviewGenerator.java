@@ -24,10 +24,13 @@ import android.content.res.Resources;
 import android.content.res.ThemeConfig;
 import android.graphics.Bitmap;
 
+import android.text.TextUtils;
 import org.cyanogenmod.themes.provider.R;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 public class WallpaperPreviewGenerator {
     private static final String WALLPAPER_ASSET_PATH = "wallpapers";
@@ -46,43 +49,74 @@ public class WallpaperPreviewGenerator {
     public WallpaperItems generateWallpaperPreviews(PackageInfo themeInfo)
             throws NameNotFoundException, IOException {
         WallpaperItems items = new WallpaperItems();
+        WallpaperItem item = null;
+        Bitmap preview = null;
         if (themeInfo == null) {
             Resources res = mContext.getPackageManager().getThemedResourcesForApplication("android",
                     ThemeConfig.SYSTEM_DEFAULT);
-            items.wpPreview = items.lsPreview = BitmapUtils.decodeResource(res,
+            item = new WallpaperItem();
+            item.preview = BitmapUtils.decodeResource(res,
                     com.android.internal.R.drawable.default_wallpaper, mPreviewSize, mPreviewSize);
+            item.thumbnail = Bitmap.createScaledBitmap(item.preview, mThumbnailSize, mThumbnailSize,
+                    true);
+            if (item != null) {
+                items.wallpapers.add(item);
+                items.lockscreen = item;
+            }
         } else {
             final Context themeContext = mContext.createPackageContext(themeInfo.packageName, 0);
             final AssetManager assets = themeContext.getAssets();
-            String path = ThemeUtils.getWallpaperPath(assets);
-            if (path != null) {
-                items.wpPreview = BitmapUtils.getBitmapFromAsset(themeContext, path,
-                        mPreviewSize, mPreviewSize);
+            // Get all wallpapers
+            List<String> paths = ThemeUtils.getWallpaperPathList(assets);
+            for (String path : paths) {
+                if (!TextUtils.isEmpty(path)) {
+                    preview = BitmapUtils.getBitmapFromAsset(themeContext, path,
+                            mPreviewSize, mPreviewSize);
+                    item = createWallpaperItems(path, preview);
+                    if (item != null) {
+                        items.wallpapers.add(item);
+                    }
+                }
             }
-            path = ThemeUtils.getLockscreenWallpaperPath(assets);
-            if (path != null) {
-                items.lsPreview = BitmapUtils.getBitmapFromAsset(themeContext, path,
+            // Get the lockscreen
+            String path = ThemeUtils.getLockscreenWallpaperPath(assets);
+            if (!TextUtils.isEmpty(path)) {
+                preview = BitmapUtils.getBitmapFromAsset(themeContext, path,
                         mPreviewSize, mPreviewSize);
+                items.lockscreen = createWallpaperItems(path, preview);
             }
-        }
-        if (items.wpPreview != null) {
-            items.wpThumbnail = Bitmap.createScaledBitmap(items.wpPreview, mThumbnailSize,
-                    mThumbnailSize, true);
-        }
-        if (items.lsPreview != null) {
-            items.lsThumbnail = Bitmap.createScaledBitmap(items.lsPreview, mThumbnailSize,
-                    mThumbnailSize, true);
         }
         return items;
     }
 
+    private WallpaperItem createWallpaperItems(String path, Bitmap preview) {
+        if (TextUtils.isEmpty(path) || preview == null) {
+            return null;
+        }
+        WallpaperItem item = new WallpaperItem();
+        item.assetPath = path;
+        item.preview = preview;
+        item.thumbnail = Bitmap.createScaledBitmap(item.preview, mThumbnailSize, mThumbnailSize,
+                true);
+        return item;
+    }
+
+    public class WallpaperItem {
+        public String assetPath;
+        public Bitmap preview;
+        public Bitmap thumbnail;
+    }
+
     public class WallpaperItems {
         // Wallpaper items
-        public Bitmap wpThumbnail;
-        public Bitmap wpPreview;
+        public List<WallpaperItem> wallpapers;
 
-        // Lockscreen wallpaper items
-        public Bitmap lsThumbnail;
-        public Bitmap lsPreview;
+        // Lockscreen wallpaper item
+        public WallpaperItem lockscreen;
+
+        public WallpaperItems() {
+            wallpapers = new LinkedList<WallpaperItem>();
+            lockscreen = null;
+        }
     }
 }

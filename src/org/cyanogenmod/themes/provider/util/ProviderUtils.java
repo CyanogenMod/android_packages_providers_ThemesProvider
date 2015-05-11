@@ -127,6 +127,12 @@ public class ProviderUtils {
         return newProjection.toArray(new String[newProjection.size()]);
     }
 
+    public static String modifyDefaultPreviewsSelection(String selection, String[] projection) {
+        String newSelection = modifyPreviewsSelection(selection, projection);
+        newSelection += " AND " + PreviewColumns.COMPONENT_ID + "=0";
+        return newSelection;
+    }
+
     public static String modifyPreviewsSelection(String selection, String[] projection) {
         String newSelection = selection;
         List<String> projectionItems = getPreviewProjectionItems(projection);

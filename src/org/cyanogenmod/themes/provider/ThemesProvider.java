@@ -241,7 +241,7 @@ public class ThemesProvider extends ContentProvider {
             break;
         case PREVIEWS:
             projection = ProviderUtils.modifyPreviewsProjection(projection);
-            selection = ProviderUtils.modifyPreviewsSelection(selection, projection);
+            selection = ProviderUtils.modifyDefaultPreviewsSelection(selection, projection);
             selectionArgs = ProviderUtils.modifyPreviewsSelectionArgs(selectionArgs, projection);
             groupBy = PreviewColumns.THEME_ID + "," + PreviewColumns.COMPONENT_ID;
             queryBuilder.setTables(THEMES_PREVIEWS_INNER_JOIN);

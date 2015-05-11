@@ -39,6 +39,7 @@ import org.cyanogenmod.themes.provider.util.StylePreviewGenerator.StyleItems;
 import org.cyanogenmod.themes.provider.util.SystemUiPreviewGenerator;
 import org.cyanogenmod.themes.provider.util.SystemUiPreviewGenerator.SystemUiItems;
 import org.cyanogenmod.themes.provider.util.WallpaperPreviewGenerator;
+import org.cyanogenmod.themes.provider.util.WallpaperPreviewGenerator.WallpaperItem;
 import org.cyanogenmod.themes.provider.util.WallpaperPreviewGenerator.WallpaperItems;
 
 import java.io.ByteArrayOutputStream;
@@ -267,33 +268,51 @@ public class PreviewGenerationService extends IntentService {
                 themeValues.add(values);
             }
             if (wallpaperItems != null) {
-                if (wallpaperItems.wpPreview != null) {
-                    path = compressAndSaveJpg(wallpaperItems.wpPreview, filesDir, pkgName,
-                            PreviewColumns.WALLPAPER_PREVIEW);
-                    values = createPreviewEntryString(id,
-                            PreviewColumns.WALLPAPER_PREVIEW, path);
-                    themeValues.add(values);
+                for (int i = 0; i < wallpaperItems.wallpapers.size(); i++) {
+                    String componentID =  String.format("%03d", i);
+                    WallpaperItem wallpaperItem = wallpaperItems.wallpapers.get(i);
+                    if (wallpaperItem == null) continue;
+
+                    if (wallpaperItem.assetPath != null) {
+                        path = wallpaperItem.assetPath;
+                        values = createPreviewEntryString(id, i,
+                                PreviewColumns.WALLPAPER_FULL, path);
+                        themeValues.add(values);
+                    }
+
+                    if (wallpaperItem.preview != null) {
+                        path = compressAndSaveJpg(wallpaperItem.preview, filesDir, pkgName,
+                                PreviewColumns.WALLPAPER_PREVIEW + componentID);
+                        values = createPreviewEntryString(id, i,
+                                PreviewColumns.WALLPAPER_PREVIEW, path);
+                        themeValues.add(values);
+                    }
+
+                    if (wallpaperItem.thumbnail != null) {
+                        path = compressAndSavePng(wallpaperItem.thumbnail, filesDir, pkgName,
+                                PreviewColumns.WALLPAPER_THUMBNAIL + componentID);
+                        values = createPreviewEntryString(id, i,
+                                PreviewColumns.WALLPAPER_THUMBNAIL, path);
+                        themeValues.add(values);
+                    }
                 }
-                if (wallpaperItems.wpThumbnail != null) {
-                    path = compressAndSavePng(wallpaperItems.wpThumbnail, filesDir, pkgName,
-                            PreviewColumns.WALLPAPER_THUMBNAIL);
-                    values = createPreviewEntryString(id,
-                            PreviewColumns.WALLPAPER_THUMBNAIL, path);
-                    themeValues.add(values);
-                }
-                if (wallpaperItems.lsPreview != null) {
-                    path = compressAndSaveJpg(wallpaperItems.lsPreview, filesDir, pkgName,
-                            PreviewColumns.LOCK_WALLPAPER_PREVIEW);
-                    values = createPreviewEntryString(id,
-                            PreviewColumns.LOCK_WALLPAPER_PREVIEW, path);
-                    themeValues.add(values);
-                }
-                if (wallpaperItems.lsThumbnail != null) {
-                    path = compressAndSavePng(wallpaperItems.lsThumbnail, filesDir, pkgName,
-                            PreviewColumns.LOCK_WALLPAPER_THUMBNAIL);
-                    values = createPreviewEntryString(id,
-                            PreviewColumns.LOCK_WALLPAPER_THUMBNAIL, path);
-                    themeValues.add(values);
+
+                if (wallpaperItems.lockscreen != null) {
+                    if (wallpaperItems.lockscreen.preview != null) {
+                        path = compressAndSaveJpg(wallpaperItems.lockscreen.preview, filesDir,
+                                pkgName, PreviewColumns.LOCK_WALLPAPER_PREVIEW);
+                        values = createPreviewEntryString(id,
+                                PreviewColumns.LOCK_WALLPAPER_PREVIEW, path);
+                        themeValues.add(values);
+                    }
+
+                    if (wallpaperItems.lockscreen.thumbnail != null) {
+                        path = compressAndSavePng(wallpaperItems.lockscreen.thumbnail, filesDir,
+                                pkgName, PreviewColumns.LOCK_WALLPAPER_THUMBNAIL);
+                        values = createPreviewEntryString(id,
+                                PreviewColumns.LOCK_WALLPAPER_THUMBNAIL, path);
+                        themeValues.add(values);
+                    }
                 }
             }
             if (styleItems != null) {
@@ -316,9 +335,11 @@ public class PreviewGenerationService extends IntentService {
             }
 
             if (!themeValues.isEmpty()) {
-                selection = PreviewColumns.THEME_ID + "=? AND " + PreviewColumns.COL_KEY + "=?";
+                selection = PreviewColumns.THEME_ID + "=? AND " + PreviewColumns.COMPONENT_ID +
+                        "=? AND " + PreviewColumns.COL_KEY + "=?";
                 for (ContentValues contentValues : themeValues) {
                     selectionArgs = new String[]{String.valueOf(id),
+                            contentValues.getAsString(PreviewColumns.COMPONENT_ID),
                             contentValues.getAsString(PreviewColumns.COL_KEY)};
                     // Try an update first, if that returns 0 then we need to insert these values
                     if (resolver.update(PreviewColumns.CONTENT_URI, contentValues, selection,
@@ -331,8 +352,14 @@ public class PreviewGenerationService extends IntentService {
     }
 
     private static ContentValues createPreviewEntryInt(int id, String key, int value) {
+        return createPreviewEntryInt(id, 0, key, value);
+    }
+
+    private static ContentValues createPreviewEntryInt(int id, int componentId, String key,
+            int value) {
         ContentValues values = new ContentValues();
         values.put(PreviewColumns.THEME_ID, id);
+        values.put(PreviewColumns.COMPONENT_ID, componentId);
         values.put(PreviewColumns.COL_KEY, key);
         values.put(PreviewColumns.COL_VALUE, value);
 
@@ -340,8 +367,14 @@ public class PreviewGenerationService extends IntentService {
     }
 
     private static ContentValues createPreviewEntryString(int id, String key, String value) {
+        return createPreviewEntryString(id, 0, key, value);
+    }
+
+    private static ContentValues createPreviewEntryString(int id, int componentId, String key,
+            String value) {
         ContentValues values = new ContentValues();
         values.put(PreviewColumns.THEME_ID, id);
+        values.put(PreviewColumns.COMPONENT_ID, componentId);
         values.put(PreviewColumns.COL_KEY, key);
         values.put(PreviewColumns.COL_VALUE, value);
 
