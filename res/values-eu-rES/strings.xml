@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Gaien hornitzailea</string>
   <string name="unknown_app_name">Ezezaguna</string>
+  <string name="controls_preview_button_text">Arrunta</string>
 </resources>
