@@ -157,8 +157,7 @@ public class PreviewGenerationService extends IntentService {
     }
 
     private void insertPreviewItemsIntoDb(String pkgName, SystemUiItems items, IconItems icons,
-                                          WallpaperItems wallpaperItems, StyleItems styleItems,
-                                          Bitmap bootAnim) {
+            WallpaperItems wallpaperItems, StyleItems styleItems, Bitmap bootAnim) {
         String[] projection = {ThemesColumns._ID};
         String selection = ThemesColumns.PKG_NAME + "=?";
         String[] selectionArgs = { pkgName };
@@ -268,27 +267,34 @@ public class PreviewGenerationService extends IntentService {
                 themeValues.add(values);
             }
             if (wallpaperItems != null) {
-                path = compressAndSaveJpg(wallpaperItems.wpPreview, filesDir, pkgName,
-                        PreviewColumns.WALLPAPER_PREVIEW);
-                values = createPreviewEntryString(id, PreviewColumns.WALLPAPER_PREVIEW, path);
-                themeValues.add(values);
-
-                path = compressAndSavePng(wallpaperItems.wpThumbnail, filesDir, pkgName,
-                        PreviewColumns.WALLPAPER_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.WALLPAPER_THUMBNAIL, path);
-                themeValues.add(values);
-
-                path = compressAndSaveJpg(wallpaperItems.lsPreview, filesDir, pkgName,
-                        PreviewColumns.LOCK_WALLPAPER_PREVIEW);
-                values = createPreviewEntryString(id, PreviewColumns.LOCK_WALLPAPER_PREVIEW,
-                        path);
-                themeValues.add(values);
-
-                path = compressAndSavePng(wallpaperItems.lsThumbnail, filesDir, pkgName,
-                        PreviewColumns.LOCK_WALLPAPER_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.LOCK_WALLPAPER_THUMBNAIL,
-                        path);
-                themeValues.add(values);
+                if (wallpaperItems.wpPreview != null) {
+                    path = compressAndSaveJpg(wallpaperItems.wpPreview, filesDir, pkgName,
+                            PreviewColumns.WALLPAPER_PREVIEW);
+                    values = createPreviewEntryString(id,
+                            PreviewColumns.WALLPAPER_PREVIEW, path);
+                    themeValues.add(values);
+                }
+                if (wallpaperItems.wpThumbnail != null) {
+                    path = compressAndSavePng(wallpaperItems.wpThumbnail, filesDir, pkgName,
+                            PreviewColumns.WALLPAPER_THUMBNAIL);
+                    values = createPreviewEntryString(id,
+                            PreviewColumns.WALLPAPER_THUMBNAIL, path);
+                    themeValues.add(values);
+                }
+                if (wallpaperItems.lsPreview != null) {
+                    path = compressAndSaveJpg(wallpaperItems.lsPreview, filesDir, pkgName,
+                            PreviewColumns.LOCK_WALLPAPER_PREVIEW);
+                    values = createPreviewEntryString(id,
+                            PreviewColumns.LOCK_WALLPAPER_PREVIEW, path);
+                    themeValues.add(values);
+                }
+                if (wallpaperItems.lsThumbnail != null) {
+                    path = compressAndSavePng(wallpaperItems.lsThumbnail, filesDir, pkgName,
+                            PreviewColumns.LOCK_WALLPAPER_THUMBNAIL);
+                    values = createPreviewEntryString(id,
+                            PreviewColumns.LOCK_WALLPAPER_THUMBNAIL, path);
+                    themeValues.add(values);
+                }
             }
             if (styleItems != null) {
                 path = compressAndSavePng(styleItems.thumbnail, filesDir, pkgName,
@@ -343,13 +349,13 @@ public class PreviewGenerationService extends IntentService {
     }
 
     private static String compressAndSavePng(Bitmap bmp, String baseDir, String pkgName,
-                                               String fileName) {
+            String fileName) {
         byte[] image = getBitmapBlobPng(bmp);
         return saveCompressedImage(image, baseDir, pkgName, fileName);
     }
 
     private static String compressAndSaveJpg(Bitmap bmp, String baseDir, String pkgName,
-                                             String fileName) {
+            String fileName) {
         byte[] image = getBitmapBlobJpg(bmp);
         return saveCompressedImage(image, baseDir, pkgName, fileName);
     }
@@ -370,7 +376,8 @@ public class PreviewGenerationService extends IntentService {
     }
 
     private static String saveCompressedImage(byte[] image, String baseDir, String pkgName,
-                                              String fileName) {
+            String fileName) {
+        if (image == null) return null;
         // Create relevant directories
         String previewsDir = baseDir + File.separator + PREVIEWS_DIR;
         String pkgDir = previewsDir + File.separator + pkgName;
