@@ -24,8 +24,15 @@ import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.provider.ThemesContract;
 import android.provider.ThemesContract.MixnMatchColumns;
+import android.provider.ThemesContract.PreviewColumns;
 import android.provider.ThemesContract.ThemesColumns;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 public class ProviderUtils {
     /**
@@ -104,6 +111,71 @@ public class ProviderUtils {
             c.close();
         }
         return themePkgName;
+    }
+
+    public static String[] modifyPreviewsProjection(String[] projection) {
+        Set<String> validKeys =
+                new HashSet<String>(Arrays.asList(ThemesContract.PreviewColumns.VALID_KEYS));
+        ArrayList<String> newProjection = new ArrayList<String>();
+        for (String item : projection) {
+            if (validKeys.contains(item)) {
+                newProjection.add(getProjectionFromKeyValue(item));
+            } else {
+                newProjection.add(item);
+            }
+        }
+        return newProjection.toArray(new String[newProjection.size()]);
+    }
+
+    public static String modifyPreviewsSelection(String selection, String[] projection) {
+        String newSelection = selection;
+        List<String> projectionItems = getPreviewProjectionItems(projection);
+        if (projectionItems.size() > 0) {
+            newSelection += " AND (";
+            for (int i = 0; i < projectionItems.size(); i++) {
+                newSelection += PreviewColumns.COL_KEY + "=?";
+                if (i < projectionItems.size() - 1) {
+                    newSelection += " OR ";
+                }
+            }
+            newSelection += ")";
+        }
+        return newSelection;
+    }
+
+    public static String[] modifyPreviewsSelectionArgs(String[] selectionArgs,
+            String[] projection) {
+        ArrayList<String> newSelectionArgs =
+                new ArrayList<String>(Arrays.asList(selectionArgs));
+        List<String> projectionItems = getPreviewProjectionItems(projection);
+        for (String item : projectionItems) {
+            newSelectionArgs.add(item);
+        }
+        return newSelectionArgs.toArray(new String[newSelectionArgs.size()]);
+    }
+
+    public static List<String> getPreviewProjectionItems(String[] projection) {
+        Set<String> validKeys =
+                new HashSet<String>(Arrays.asList(PreviewColumns.VALID_KEYS));
+        ArrayList<String> newProjection = new ArrayList<String>();
+        for (String item : projection) {
+            if (validKeys.contains(item)) {
+                newProjection.add(getProjectionFromKeyValue(item));
+            }
+        }
+        return newProjection;
+    }
+
+    /**
+     * This allows pivoting key/value pairs as column/entry pairs.
+     * This is only needed when querying multiple keys at a time.
+     * @param keyValue
+     * @return
+     */
+    public static String getProjectionFromKeyValue(String keyValue) {
+        return String.format("MAX( CASE %s WHEN '%s' THEN %s ELSE NULL END) AS %s",
+                ThemesContract.PreviewColumns.COL_KEY, keyValue,
+                ThemesContract.PreviewColumns.COL_VALUE, keyValue);
     }
 
     /**

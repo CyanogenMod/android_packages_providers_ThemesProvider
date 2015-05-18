@@ -182,129 +182,129 @@ public class PreviewGenerationService extends IntentService {
 
             if (items != null) {
                 path = compressAndSavePng(items.statusbarBackground, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_BACKGROUND);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BACKGROUND,
+                        PreviewColumns.STATUSBAR_BACKGROUND);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_BACKGROUND,
                         path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.bluetoothIcon, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON,
+                        PreviewColumns.STATUSBAR_BLUETOOTH_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_BLUETOOTH_ICON,
                         path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.wifiIcon, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_WIFI_ICON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_WIFI_ICON, path);
+                        PreviewColumns.STATUSBAR_WIFI_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_WIFI_ICON, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.signalIcon, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON,
+                        PreviewColumns.STATUSBAR_SIGNAL_ICON);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_SIGNAL_ICON,
                         path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.batteryPortrait, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT,
+                        PreviewColumns.STATUSBAR_BATTERY_PORTRAIT);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_BATTERY_PORTRAIT,
                         path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.batteryLandscape, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE);
+                        PreviewColumns.STATUSBAR_BATTERY_LANDSCAPE);
                 values = createPreviewEntryString(id,
-                        PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE, path);
+                        PreviewColumns.STATUSBAR_BATTERY_LANDSCAPE, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.batteryCircle, filesDir, pkgName,
-                        PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE,
+                        PreviewColumns.STATUSBAR_BATTERY_CIRCLE);
+                values = createPreviewEntryString(id, PreviewColumns.STATUSBAR_BATTERY_CIRCLE,
                         path);
                 themeValues.add(values);
 
-                values = createPreviewEntryInt(id, PreviewColumns.KEY_STATUSBAR_CLOCK_TEXT_COLOR,
+                values = createPreviewEntryInt(id, PreviewColumns.STATUSBAR_CLOCK_TEXT_COLOR,
                         items.clockColor);
                 themeValues.add(values);
 
                 values = createPreviewEntryInt(id,
-                        PreviewColumns.KEY_STATUSBAR_WIFI_COMBO_MARGIN_END, items.wifiMarginEnd);
+                        PreviewColumns.STATUSBAR_WIFI_COMBO_MARGIN_END, items.wifiMarginEnd);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.navbarBackground, filesDir, pkgName,
-                        PreviewColumns.KEY_NAVBAR_BACKGROUND);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_BACKGROUND, path);
+                        PreviewColumns.NAVBAR_BACKGROUND);
+                values = createPreviewEntryString(id, PreviewColumns.NAVBAR_BACKGROUND, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.navbarBack, filesDir, pkgName,
-                        PreviewColumns.KEY_NAVBAR_BACK_BUTTON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_BACK_BUTTON, path);
+                        PreviewColumns.NAVBAR_BACK_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.NAVBAR_BACK_BUTTON, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.navbarHome, filesDir, pkgName,
-                        PreviewColumns.KEY_NAVBAR_HOME_BUTTON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_HOME_BUTTON, path);
+                        PreviewColumns.NAVBAR_HOME_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.NAVBAR_HOME_BUTTON, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(items.navbarRecent, filesDir, pkgName,
-                        PreviewColumns.KEY_NAVBAR_RECENT_BUTTON);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_NAVBAR_RECENT_BUTTON,
+                        PreviewColumns.NAVBAR_RECENT_BUTTON);
+                values = createPreviewEntryString(id, PreviewColumns.NAVBAR_RECENT_BUTTON,
                         path);
                 themeValues.add(values);
             }
             if (icons != null) {
                 path = compressAndSavePng(icons.icon1, filesDir, pkgName,
-                        PreviewColumns.KEY_ICON_PREVIEW_1);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_1, path);
+                        PreviewColumns.ICON_PREVIEW_1);
+                values = createPreviewEntryString(id, PreviewColumns.ICON_PREVIEW_1, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(icons.icon2, filesDir, pkgName,
-                        PreviewColumns.KEY_ICON_PREVIEW_2);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_2, path);
+                        PreviewColumns.ICON_PREVIEW_2);
+                values = createPreviewEntryString(id, PreviewColumns.ICON_PREVIEW_2, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(icons.icon3, filesDir, pkgName,
-                        PreviewColumns.KEY_ICON_PREVIEW_3);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_ICON_PREVIEW_3, path);
+                        PreviewColumns.ICON_PREVIEW_3);
+                values = createPreviewEntryString(id, PreviewColumns.ICON_PREVIEW_3, path);
                 themeValues.add(values);
             }
             if (wallpaperItems != null) {
                 path = compressAndSaveJpg(wallpaperItems.wpPreview, filesDir, pkgName,
-                        PreviewColumns.KEY_WALLPAPER_PREVIEW);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_WALLPAPER_PREVIEW, path);
+                        PreviewColumns.WALLPAPER_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.WALLPAPER_PREVIEW, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(wallpaperItems.wpThumbnail, filesDir, pkgName,
-                        PreviewColumns.KEY_WALLPAPER_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_WALLPAPER_THUMBNAIL, path);
+                        PreviewColumns.WALLPAPER_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.WALLPAPER_THUMBNAIL, path);
                 themeValues.add(values);
 
                 path = compressAndSaveJpg(wallpaperItems.lsPreview, filesDir, pkgName,
-                        PreviewColumns.KEY_LOCK_WALLPAPER_PREVIEW);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_LOCK_WALLPAPER_PREVIEW,
+                        PreviewColumns.LOCK_WALLPAPER_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.LOCK_WALLPAPER_PREVIEW,
                         path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(wallpaperItems.lsThumbnail, filesDir, pkgName,
-                        PreviewColumns.KEY_LOCK_WALLPAPER_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_LOCK_WALLPAPER_THUMBNAIL,
+                        PreviewColumns.LOCK_WALLPAPER_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.LOCK_WALLPAPER_THUMBNAIL,
                         path);
                 themeValues.add(values);
             }
             if (styleItems != null) {
                 path = compressAndSavePng(styleItems.thumbnail, filesDir, pkgName,
-                        PreviewColumns.KEY_STYLE_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STYLE_THUMBNAIL, path);
+                        PreviewColumns.STYLE_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.STYLE_THUMBNAIL, path);
                 themeValues.add(values);
 
                 path = compressAndSavePng(styleItems.preview, filesDir, pkgName,
-                        PreviewColumns.KEY_STYLE_PREVIEW);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_STYLE_PREVIEW, path);
+                        PreviewColumns.STYLE_PREVIEW);
+                values = createPreviewEntryString(id, PreviewColumns.STYLE_PREVIEW, path);
                 themeValues.add(values);
             }
             if (bootAnim != null) {
                 path = compressAndSavePng(bootAnim, filesDir, pkgName,
-                        PreviewColumns.KEY_BOOTANIMATION_THUMBNAIL);
-                values = createPreviewEntryString(id, PreviewColumns.KEY_BOOTANIMATION_THUMBNAIL,
+                        PreviewColumns.BOOTANIMATION_THUMBNAIL);
+                values = createPreviewEntryString(id, PreviewColumns.BOOTANIMATION_THUMBNAIL,
                         path);
                 themeValues.add(values);
             }

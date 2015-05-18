@@ -31,7 +31,6 @@ import android.provider.ThemesContract;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.MixnMatchColumns;
 import android.provider.ThemesContract.PreviewColumns;
-import android.provider.ThemesContract.LegacyPreviewColumns;
 import android.util.Log;
 
 public class ThemesOpenHelper extends SQLiteOpenHelper {
@@ -253,7 +252,7 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
 
     private void upgradeToVersion8(SQLiteDatabase db) {
         String addNavBar = String.format("ALTER TABLE %s ADD COLUMN %s BLOB",
-                PreviewsTable.TABLE_NAME, LegacyPreviewColumns.NAVBAR_BACKGROUND);
+                PreviewsTable.TABLE_NAME, PreviewColumns.NAVBAR_BACKGROUND);
         db.execSQL(addNavBar);
 
         // we need to update any existing themes with the new NAVBAR_BACKGROUND
@@ -541,26 +540,26 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         ")";
 
         public static final String[] STATUS_BAR_PREVIEW_KEYS = {
-                PreviewColumns.KEY_STATUSBAR_BACKGROUND,
-                PreviewColumns.KEY_STATUSBAR_BLUETOOTH_ICON,
-                PreviewColumns.KEY_STATUSBAR_WIFI_ICON,
-                PreviewColumns.KEY_STATUSBAR_SIGNAL_ICON,
-                PreviewColumns.KEY_STATUSBAR_BATTERY_PORTRAIT,
-                PreviewColumns.KEY_STATUSBAR_BATTERY_LANDSCAPE,
-                PreviewColumns.KEY_STATUSBAR_BATTERY_CIRCLE,
-                PreviewColumns.KEY_STATUSBAR_WIFI_COMBO_MARGIN_END,
-                PreviewColumns.KEY_STATUSBAR_CLOCK_TEXT_COLOR
+                PreviewColumns.STATUSBAR_BACKGROUND,
+                PreviewColumns.STATUSBAR_BLUETOOTH_ICON,
+                PreviewColumns.STATUSBAR_WIFI_ICON,
+                PreviewColumns.STATUSBAR_SIGNAL_ICON,
+                PreviewColumns.STATUSBAR_BATTERY_PORTRAIT,
+                PreviewColumns.STATUSBAR_BATTERY_LANDSCAPE,
+                PreviewColumns.STATUSBAR_BATTERY_CIRCLE,
+                PreviewColumns.STATUSBAR_WIFI_COMBO_MARGIN_END,
+                PreviewColumns.STATUSBAR_CLOCK_TEXT_COLOR
         };
         public static final String[] NAVIGATION_BAR_PREVIEW_KEYS = {
-                PreviewColumns.KEY_NAVBAR_BACK_BUTTON,
-                PreviewColumns.KEY_NAVBAR_HOME_BUTTON,
-                PreviewColumns.KEY_NAVBAR_RECENT_BUTTON,
-                PreviewColumns.KEY_NAVBAR_BACKGROUND
+                PreviewColumns.NAVBAR_BACK_BUTTON,
+                PreviewColumns.NAVBAR_HOME_BUTTON,
+                PreviewColumns.NAVBAR_RECENT_BUTTON,
+                PreviewColumns.NAVBAR_BACKGROUND
         };
         public static final String[] ICON_PREVIEW_KEYS = {
-                PreviewColumns.KEY_ICON_PREVIEW_1,
-                PreviewColumns.KEY_ICON_PREVIEW_2,
-                PreviewColumns.KEY_ICON_PREVIEW_3
+                PreviewColumns.ICON_PREVIEW_1,
+                PreviewColumns.ICON_PREVIEW_2,
+                PreviewColumns.ICON_PREVIEW_3
         };
 
         public static void insertDefaults(Context context) {
