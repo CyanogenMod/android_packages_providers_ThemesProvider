@@ -36,7 +36,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 16;
+    private static final int DATABASE_VERSION = 17;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
     private static final String OLD_SYSTEM_THEME_PKG_NAME = "holo";
@@ -119,6 +119,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 // Versions 15 and 16 share same upgrade path, no need to run twice.
                 upgradeToVersion16(db);
                 oldVersion = 16;
+            }
+            if (oldVersion == 16) {
+                upgradeToVersion17(db);
+                oldVersion = 17;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -429,6 +433,13 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         }
     }
 
+    private void upgradeToVersion17(SQLiteDatabase db) {
+        // add componentId column to mixnmatch db
+        String sql = String.format("ALTER TABLE %s ADD COLUMN %s INTEGER DEFAULT 0",
+        MixnMatchTable.TABLE_NAME, MixnMatchColumns.COL_COMPONENT_ID);
+        db.execSQL(sql);
+    }
+
     private void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS " + ThemesTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MixnMatchTable.TABLE_NAME);
@@ -513,7 +524,8 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                         MixnMatchColumns.COL_KEY + " TEXT PRIMARY KEY," +
                         MixnMatchColumns.COL_VALUE + " TEXT," +
                         MixnMatchColumns.COL_PREV_VALUE + " TEXT," +
-                        MixnMatchColumns.COL_UPDATE_TIME + " INTEGER DEFAULT 0" +
+                        MixnMatchColumns.COL_UPDATE_TIME + " INTEGER DEFAULT 0," +
+                        MixnMatchColumns.COL_COMPONENT_ID + " INTEGER DEFAULT 0" +
                         ")";
 
         public static void insertDefaults(SQLiteDatabase db) {
