@@ -36,7 +36,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 15;
+    private static final int DATABASE_VERSION = 16;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
     private static final String OLD_SYSTEM_THEME_PKG_NAME = "holo";
@@ -115,9 +115,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 upgradeToVersion14(db);
                 oldVersion = 14;
             }
-            if (oldVersion == 14) {
-                upgradeToVersion15(db);
-                oldVersion = 15;
+            if (oldVersion == 14 || oldVersion == 15) {
+                // Versions 15 and 16 share same upgrade path, no need to run twice.
+                upgradeToVersion16(db);
+                oldVersion = 16;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -407,7 +408,8 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         db.execSQL(sql);
     }
 
-    private void upgradeToVersion15(SQLiteDatabase db) {
+    // upgradeToVersion16 is the same upgrade path for both 14->15 and 15->16
+    private void upgradeToVersion16(SQLiteDatabase db) {
         // Previews table upgraded
         db.execSQL("DROP TABLE IF EXISTS " + PreviewsTable.TABLE_NAME);
         db.execSQL(PreviewsTable.PREVIEWS_TABLE_CREATE);
