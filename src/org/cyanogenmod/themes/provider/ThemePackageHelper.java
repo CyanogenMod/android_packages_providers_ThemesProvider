@@ -68,6 +68,8 @@ public class ThemePackageHelper {
                 "overlays/com.android.systemui");
         sComponentToFolderName.put(ThemesColumns.MODIFIES_NAVIGATION_BAR,
                 "overlays/com.android.systemui");
+        sComponentToFolderName.put(ThemesColumns.MODIFIES_LIVE_LOCK_SCREEN,
+                "live-lockscreen");
     }
 
     public static boolean insertPackage(Context context, String pkgName, boolean isProcessing)
