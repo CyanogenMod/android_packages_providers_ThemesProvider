@@ -30,6 +30,7 @@ import android.os.Bundle;
 import android.os.FileUtils;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.PreviewColumns;
+import android.text.TextUtils;
 import android.util.Log;
 import org.cyanogenmod.themes.provider.util.BootAnimationPreviewGenerator;
 import org.cyanogenmod.themes.provider.util.IconPreviewGenerator;
@@ -179,6 +180,7 @@ public class PreviewGenerationService extends IntentService {
                     filesDir + File.separator + PREVIEWS_DIR + File.separator + pkgName;
             String path = null;
             clearThemePreviewsDir(themePreviewsDir);
+            clearThemeFromPreviewDB(resolver, pkgName);
 
             if (items != null) {
                 path = compressAndSavePng(items.statusbarBackground, filesDir, pkgName,
@@ -441,6 +443,12 @@ public class PreviewGenerationService extends IntentService {
         File directory = new File(path);
         FileUtils.deleteContents(directory);
         directory.delete();
+    }
+
+    private static void clearThemeFromPreviewDB(ContentResolver resolver, String pkgName) {
+        String selection = ThemesColumns.PKG_NAME + "=?";
+        String[] selectionArgs = new String[]{ String.valueOf(pkgName) };
+        resolver.delete(PreviewColumns.CONTENT_URI, selection, selectionArgs);
     }
 
     private static Cursor queryTheme(Context context, String pkgName) {

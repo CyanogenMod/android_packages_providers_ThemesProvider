@@ -102,15 +102,20 @@ public class ThemesProvider extends ContentProvider {
 
     @Override
     public int delete(Uri uri, String selection, String[] selectionArgs) {
+        SQLiteDatabase sqlDB = null;
+        int idx = -1;
+        String[] columns = null;
+        Cursor c = null;
+        int rowsDeleted = 0;
         int match = sUriMatcher.match(uri);
         switch (match) {
         case THEMES:
-            SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
+            sqlDB = mDatabase.getWritableDatabase();
 
             // Get the theme's _id and delete preview images
-            int idx = -1;
-            String[] columns = new String[] { ThemesColumns._ID, ThemesColumns.PKG_NAME };
-            Cursor c = sqlDB.query(ThemesTable.TABLE_NAME, columns, selection,
+            idx = -1;
+            columns = new String[] { ThemesColumns._ID, ThemesColumns.PKG_NAME };
+            c = sqlDB.query(ThemesTable.TABLE_NAME, columns, selection,
                     selectionArgs, null, null, null);
             if (c == null) return 0;
             if (c.moveToFirst()) {
@@ -128,8 +133,24 @@ public class ThemesProvider extends ContentProvider {
             }
             c.close();
 
-            int rowsDeleted = sqlDB.delete(ThemesTable.TABLE_NAME, selection, selectionArgs);
+            rowsDeleted = sqlDB.delete(ThemesTable.TABLE_NAME, selection, selectionArgs);
             getContext().getContentResolver().notifyChange(uri, null);
+            return rowsDeleted;
+        case PREVIEWS:
+            sqlDB = mDatabase.getWritableDatabase();
+
+            // Get the theme's _id and delete preview images
+            idx = -1;
+            columns = new String[] { ThemesColumns._ID };
+            c = sqlDB.query(ThemesTable.TABLE_NAME, columns, selection,
+                    selectionArgs, null, null, null);
+            if (c == null) return 0;
+            if (c.moveToFirst()) {
+                idx = c.getColumnIndex(ThemesColumns._ID);
+                rowsDeleted = sqlDB.delete(PreviewsTable.TABLE_NAME,
+                        PreviewColumns.THEME_ID + "=" + c.getInt(idx), null);
+            }
+            c.close();
             return rowsDeleted;
         case MIXNMATCH:
             throw new UnsupportedOperationException("Cannot delete rows in MixNMatch table");
