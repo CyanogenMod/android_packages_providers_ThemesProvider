@@ -224,9 +224,14 @@ public class ThemePackageHelper {
         String[] args = { pi.packageName };
         context.getContentResolver().update(ThemesColumns.CONTENT_URI, values, where, args);
 
-        if (!isProcessing) {
-            // We should reapply any components that are currently applied for this theme.
-            reapplyInstalledComponentsForTheme(context, pi.packageName);
+        final int oldInstallState =
+                ProviderUtils.getInstallStateForTheme(context, pi.packageName);
+        final int newState = isProcessing ? InstallState.UPDATING : InstallState.INSTALLED;
+        if (newState == ThemesColumns.InstallState.INSTALLED) {
+            if (oldInstallState == ThemesColumns.InstallState.UPDATING) {
+                // We should reapply any components that are currently applied for this theme.
+                reapplyInstalledComponentsForTheme(context, pi.packageName);
+            }
         }
     }
 
