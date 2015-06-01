@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">บริการชุดรูปแบบ</string>
   <string name="unknown_app_name">ไม่ทราบ</string>
+  <string name="controls_preview_button_text">ปกติ</string>
 </resources>
