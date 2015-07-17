@@ -22,11 +22,12 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.BitmapRegionDecoder;
 import android.graphics.Rect;
-import android.net.Uri;
 import android.util.Log;
 import android.util.TypedValue;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -158,6 +159,20 @@ public class BitmapUtils {
         return bitmap;
     }
 
+    public static byte[] getBitmapBlobPng(Bitmap bmp) {
+        return getBitmapBlob(bmp, Bitmap.CompressFormat.PNG, 100);
+    }
+
+    public static byte[] getBitmapBlobJpg(Bitmap bmp) {
+        return getBitmapBlob(bmp, Bitmap.CompressFormat.JPEG, 80);
+    }
+
+    public static byte[] getBitmapBlob(Bitmap bmp, Bitmap.CompressFormat format, int quality) {
+        if (bmp == null) return null;
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        bmp.compress(format, quality, out);
+        return out.toByteArray();
+    }
 
     /**
      * For excessively large images with an awkward ratio we

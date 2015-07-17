@@ -24,6 +24,7 @@ import android.content.res.Resources;
 import android.content.res.ThemeConfig;
 import android.graphics.Bitmap;
 
+import android.provider.ThemesContract;
 import android.text.TextUtils;
 import org.cyanogenmod.themes.provider.R;
 
@@ -51,14 +52,18 @@ public class WallpaperPreviewGenerator {
         WallpaperItems items = new WallpaperItems();
         WallpaperItem item = null;
         Bitmap preview = null;
+        String baseDir = mContext.getFilesDir().getAbsolutePath();
+        String pkgName;
         if (themeInfo == null) {
+            pkgName = ThemeConfig.SYSTEM_DEFAULT;
             Resources res = mContext.getPackageManager().getThemedResourcesForApplication("android",
                     ThemeConfig.SYSTEM_DEFAULT);
-            item = new WallpaperItem();
-            item.preview = BitmapUtils.decodeResource(res,
+            if (preview != null) {
+                preview.recycle();
+            }
+            preview = BitmapUtils.decodeResource(res,
                     com.android.internal.R.drawable.default_wallpaper, mPreviewSize, mPreviewSize);
-            item.thumbnail = Bitmap.createScaledBitmap(item.preview, mThumbnailSize, mThumbnailSize,
-                    true);
+            item = createWallpaperItems(0, baseDir, null, pkgName, preview);
             if (item != null) {
                 items.wallpapers.add(item);
                 items.lockscreen = item;
@@ -66,45 +71,64 @@ public class WallpaperPreviewGenerator {
         } else {
             final Context themeContext = mContext.createPackageContext(themeInfo.packageName, 0);
             final AssetManager assets = themeContext.getAssets();
+            pkgName = themeInfo.packageName;
             // Get all wallpapers
             List<String> paths = ThemeUtils.getWallpaperPathList(assets);
+            int id = 0;
             for (String path : paths) {
                 if (!TextUtils.isEmpty(path)) {
+                    if (preview != null) {
+                        preview.recycle();
+                    }
                     preview = BitmapUtils.getBitmapFromAsset(themeContext, path,
                             mPreviewSize, mPreviewSize);
-                    item = createWallpaperItems(path, preview);
+                    item = createWallpaperItems(id, baseDir, path, pkgName, preview);
                     if (item != null) {
                         items.wallpapers.add(item);
+                        id++;
                     }
                 }
             }
             // Get the lockscreen
             String path = ThemeUtils.getLockscreenWallpaperPath(assets);
             if (!TextUtils.isEmpty(path)) {
+                if (preview != null) {
+                    preview.recycle();
+                }
                 preview = BitmapUtils.getBitmapFromAsset(themeContext, path,
                         mPreviewSize, mPreviewSize);
-                items.lockscreen = createWallpaperItems(path, preview);
+                items.lockscreen = createWallpaperItems(0, baseDir, path, pkgName, preview);
             }
         }
         return items;
     }
 
-    private WallpaperItem createWallpaperItems(String path, Bitmap preview) {
-        if (TextUtils.isEmpty(path) || preview == null) {
+    private WallpaperItem createWallpaperItems(int id, String baseDir, String assetPath,
+            String pkgName, Bitmap preview) {
+        if (TextUtils.isEmpty(assetPath) && preview == null) {
             return null;
         }
+
+        String componentID =  String.format("%03d", id);
         WallpaperItem item = new WallpaperItem();
-        item.assetPath = path;
-        item.preview = preview;
-        item.thumbnail = Bitmap.createScaledBitmap(item.preview, mThumbnailSize, mThumbnailSize,
-                true);
+
+        item.assetPath = assetPath;
+        if (preview != null) {
+            String fileName = ThemesContract.PreviewColumns.WALLPAPER_PREVIEW + componentID;
+            item.previewPath = PreviewUtils.compressAndSaveJpg(preview, baseDir, pkgName, fileName);
+            Bitmap thumbnail = Bitmap.createScaledBitmap(preview, mThumbnailSize, mThumbnailSize,
+                    true);
+            fileName = ThemesContract.PreviewColumns.WALLPAPER_THUMBNAIL + componentID;
+            item.thumbnailPath = PreviewUtils.compressAndSavePng(thumbnail, baseDir, pkgName,
+                    fileName);
+        }
         return item;
     }
 
     public class WallpaperItem {
         public String assetPath;
-        public Bitmap preview;
-        public Bitmap thumbnail;
+        public String previewPath;
+        public String thumbnailPath;
     }
 
     public class WallpaperItems {

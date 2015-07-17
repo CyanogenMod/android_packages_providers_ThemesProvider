@@ -45,6 +45,7 @@ import android.util.Log;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.MixnMatchTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.PreviewsTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemesTable;
+import org.cyanogenmod.themes.provider.util.PreviewUtils;
 import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
 import java.io.File;
@@ -128,7 +129,7 @@ public class ThemesProvider extends ContentProvider {
                 String pkgName = c.getString(idx);
                 String filesDir = getContext().getFilesDir().getAbsolutePath();
                 String themePreviewsDir = filesDir + File.separator +
-                        PreviewGenerationService.PREVIEWS_DIR + File.separator + pkgName;
+                        PreviewUtils.PREVIEWS_DIR + File.separator + pkgName;
                 PreviewGenerationService.clearThemePreviewsDir(themePreviewsDir);
             }
             c.close();
