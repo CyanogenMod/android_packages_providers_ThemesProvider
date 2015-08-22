@@ -16,7 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">ارائه دهنده مضامین</string>
+  <string name="app_name">تم‌ها</string>
   <string name="unknown_app_name">ناشناخته</string>
   <string name="controls_preview_button_text">عادی</string>
 </resources>
