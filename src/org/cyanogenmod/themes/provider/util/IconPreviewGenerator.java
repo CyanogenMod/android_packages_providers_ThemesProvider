@@ -24,6 +24,8 @@ import android.graphics.drawable.BitmapDrawable;
 public class IconPreviewGenerator {
     private static final ComponentName COMPONENT_DIALER =
             new ComponentName("com.android.dialer", "com.android.dialer.DialtactsActivity");
+    private static final ComponentName COMPONENT_DIALERNEXT =
+            new ComponentName("com.cyngn.dialer", "com.cyngn.dialer.DialtactsActivity");
     private static final ComponentName COMPONENT_MESSAGING =
             new ComponentName("com.android.mms", "com.android.mms.ui.ConversationList");
     private static final ComponentName COMPONENT_CAMERANEXT =
@@ -38,7 +40,9 @@ public class IconPreviewGenerator {
             new ComponentName("com.android.calendar", "com.android.calendar.AllInOneActivity");
     private static final ComponentName COMPONENT_GALERY =
             new ComponentName("com.android.gallery3d", "com.android.gallery3d.app.GalleryActivity");
+
     private static final String CAMERA_NEXT_PACKAGE = "com.cyngn.cameranext";
+    private static final String DIALER_NEXT_PACKAGE = "com.cyngn.dialer";
 
     private ComponentName[] mIconComponents;
 
@@ -74,6 +78,15 @@ public class IconPreviewGenerator {
             if (!pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
                 mIconComponents[0] = COMPONENT_CALENDAR;
                 mIconComponents[1] = COMPONENT_GALERY;
+            } else {
+                // decide on which dialer icon to use
+                try {
+                    if (pm.getPackageInfo(DIALER_NEXT_PACKAGE, 0) != null) {
+                        mIconComponents[0] = COMPONENT_DIALERNEXT;
+                    }
+                } catch (PackageManager.NameNotFoundException e) {
+                    // default to COMPONENT_DIALER
+                }
             }
 
             if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
