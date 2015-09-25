@@ -46,7 +46,7 @@
             android:layout_width="96dp"
             android:layout_height="30dp"
             android:layout_marginEnd="72dp"
-            android:textSize="12sp"
+            android:textSize="10dp"
             android:text="@string/controls_preview_button_text" />
 
         <Switch
