@@ -74,14 +74,14 @@
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="bottom"
-            android:src="@*android:drawable/btn_check_to_on_mtrl_000" />
+            android:src="@*android:drawable/ic_checkbox_checked" />
 
         <ImageView
             android:layout_width="32dp"
             android:layout_height="32dp"
             android:layout_gravity="bottom"
             android:layout_marginEnd="44dp"
-            android:src="@*android:drawable/btn_check_to_on_mtrl_015" />
+            android:src="@*android:drawable/ic_checkbox_checked" />
 
         <ProgressBar
             android:layout_width="48dp"
