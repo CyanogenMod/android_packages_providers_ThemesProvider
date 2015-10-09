@@ -36,7 +36,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 18;
+    private static final int DATABASE_VERSION = 19;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
     private static final String OLD_SYSTEM_THEME_PKG_NAME = "holo";
@@ -127,6 +127,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 17) {
                 upgradeToVersion18(db);
                 oldVersion = 18;
+            }
+            if (oldVersion == 18) {
+                upgradeToVersion19(db);
+                oldVersion = 19;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -457,6 +461,26 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         values.put(MixnMatchColumns.COL_UPDATE_TIME, 0);
         values.put(MixnMatchColumns.COL_KEY, MixnMatchColumns.KEY_LIVE_LOCK_SCREEN);
         db.insert(MixnMatchTable.TABLE_NAME, null, values);
+    }
+
+    // Update any themes that have live lock screen
+    private void upgradeToVersion19(SQLiteDatabase db) {
+        // we need to update any existing themes
+        final String[] projection = { ThemesColumns.PKG_NAME };
+        final String selection = ThemesColumns.MODIFIES_LIVE_LOCK_SCREEN + "=?";
+        final String[] selectionArgs = { "1" };
+
+        final Cursor c = db.query(ThemesTable.TABLE_NAME, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null) {
+            while(c.moveToNext()) {
+                Intent intent = new Intent(mContext, PreviewGenerationService.class);
+                intent.setAction(PreviewGenerationService.ACTION_INSERT);
+                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, c.getString(0));
+                mContext.startService(intent);
+            }
+            c.close();
+        }
     }
 
     private void dropTables(SQLiteDatabase db) {
