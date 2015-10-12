@@ -35,6 +35,7 @@ import android.provider.ThemesContract.MixnMatchColumns;
 import android.provider.ThemesContract.ThemesColumns;
 import android.provider.ThemesContract.ThemesColumns.InstallState;
 import android.util.Log;
+import com.android.internal.widget.LockPatternUtils;
 import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
 import java.io.IOException;
@@ -356,35 +357,53 @@ public class ThemePackageHelper {
     }
 
     private static void reapplyInstalledComponentsForTheme(Context context, String pkgName) {
-        Configuration config = context.getResources().getConfiguration();
-        if (config == null || config.themeConfig == null) return;
-
         ThemeChangeRequest.Builder builder = new ThemeChangeRequest.Builder();
-        // Other packages such as wallpaper can be changed outside of themes
-        // and are not tracked well by the provider. We only care to apply resources that may crash
-        // the system if they are not reapplied.
-        ThemeConfig themeConfig = config.themeConfig;
-        if (pkgName.equals(themeConfig.getFontPkgName())) {
-            builder.setFont(pkgName);
-        }
-        if (pkgName.equals(themeConfig.getIconPackPkgName())) {
-            builder.setIcons(pkgName);
-        }
-        if (pkgName.equals(themeConfig.getOverlayPkgName())) {
-            builder.setOverlay(pkgName);
-        }
-        if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_STATUS_BAR_PKG))) {
-            builder.setStatusBar(pkgName);
-        }
-        if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_NAVBAR_PKG))) {
-            builder.setNavBar(pkgName);
+        Configuration config = context.getResources().getConfiguration();
+        if (config != null && config.themeConfig != null) {
+            // Other packages such as wallpaper can be changed outside of themes
+            // and are not tracked well by the provider. We only care to apply resources that may crash
+            // the system if they are not reapplied.
+            ThemeConfig themeConfig = config.themeConfig;
+            if (pkgName.equals(themeConfig.getFontPkgName())) {
+                builder.setFont(pkgName);
+            }
+            if (pkgName.equals(themeConfig.getIconPackPkgName())) {
+                builder.setIcons(pkgName);
+            }
+            if (pkgName.equals(themeConfig.getOverlayPkgName())) {
+                builder.setOverlay(pkgName);
+            }
+            if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_STATUS_BAR_PKG))) {
+                builder.setStatusBar(pkgName);
+            }
+            if (pkgName.equals(themeConfig.getOverlayPkgNameForApp(SYSTEMUI_NAVBAR_PKG))) {
+                builder.setNavBar(pkgName);
+            }
+
+            // Check if there are any per-app overlays using this theme
+            final Map<String, ThemeConfig.AppTheme> themes = themeConfig.getAppThemes();
+            for (String appPkgName : themes.keySet()) {
+                if (ThemeUtils.isPerAppThemeComponent(appPkgName)) {
+                    builder.setAppOverlay(appPkgName, pkgName);
+                }
+            }
         }
 
-        // Check if there are any per-app overlays using this theme
-        final Map<String, ThemeConfig.AppTheme> themes = themeConfig.getAppThemes();
-        for (String appPkgName : themes.keySet()) {
-            if (ThemeUtils.isPerAppThemeComponent(appPkgName)) {
-                builder.setAppOverlay(appPkgName, pkgName);
+        LockPatternUtils lockPatternUtils = new LockPatternUtils(context);
+        if (lockPatternUtils.isThirdPartyKeyguardEnabled()) {
+            String[] projection = {MixnMatchColumns.COL_VALUE};
+            String selection = MixnMatchColumns.COL_KEY + "=?";
+            String[] selectionArgs = {MixnMatchColumns.KEY_LIVE_LOCK_SCREEN};
+            Cursor cursor = context.getContentResolver().query(MixnMatchColumns.CONTENT_URI,
+                    projection, selection, selectionArgs, null);
+            if (cursor != null) {
+                if (cursor.moveToFirst()) {
+                    String appliedPkgName = cursor.getString(0);
+                    if (pkgName.equals(appliedPkgName)) {
+                        builder.setLiveLockScreen(pkgName);
+                    }
+                }
+                cursor.close();
             }
         }
 
