@@ -136,7 +136,9 @@ public class ThemesProvider extends ContentProvider {
             c.close();
 
             rowsDeleted = sqlDB.delete(ThemesTable.TABLE_NAME, selection, selectionArgs);
-            getContext().getContentResolver().notifyChange(uri, null);
+            if (rowsDeleted > 0) {
+                getContext().getContentResolver().notifyChange(uri, null);
+            }
             return rowsDeleted;
         case PREVIEWS:
             sqlDB = mDatabase.getWritableDatabase();
@@ -153,6 +155,9 @@ public class ThemesProvider extends ContentProvider {
                         PreviewColumns.THEME_ID + "=" + c.getInt(idx), null);
             }
             c.close();
+            if (rowsDeleted > 0) {
+                getContext().getContentResolver().notifyChange(uri, null);
+            }
             return rowsDeleted;
         case MIXNMATCH:
             throw new UnsupportedOperationException("Cannot delete rows in MixNMatch table");
