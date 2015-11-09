@@ -373,8 +373,10 @@ public class ThemesProvider extends ContentProvider {
                 if (component != null && pkgName != null) {
                     // We need to get the theme's id using its package name
                     String[] columns = { ThemesColumns._ID };
-                    Cursor current = db.query(ThemesTable.TABLE_NAME, columns,
-                            ThemesColumns.PKG_NAME + "='" + pkgName + "'", null, null, null, null);
+                    String selection = ThemesColumns.PKG_NAME + "=? AND " + component + "=?";
+                    String[] selectionArgs = {pkgName, "1"};
+                    Cursor current = db.query(ThemesTable.TABLE_NAME, columns, selection,
+                            selectionArgs, null, null, null);
                     int id = -1;
                     if (current != null) {
                         if (current.moveToFirst()) id = current.getInt(0);
