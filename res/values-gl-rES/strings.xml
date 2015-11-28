@@ -18,4 +18,5 @@
 <resources>
   <string name="app_name">Fornecedor de temas</string>
   <string name="unknown_app_name">Descoñecido</string>
+  <string name="controls_preview_button_text">Normal</string>
 </resources>
