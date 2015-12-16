@@ -16,7 +16,5 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">مقدم المواضيع</string>
-  <string name="unknown_app_name">غير معروف</string>
   <string name="controls_preview_button_text">عادي</string>
 </resources>
