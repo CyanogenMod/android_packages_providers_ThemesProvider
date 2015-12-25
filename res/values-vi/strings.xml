@@ -17,6 +17,4 @@
 -->
 <resources>
   <string name="app_name">Nhà cung cấp chủ đề</string>
-  <string name="unknown_app_name">Không xác định</string>
-  <string name="controls_preview_button_text">Bình thường</string>
 </resources>
