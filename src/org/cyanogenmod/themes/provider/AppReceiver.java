@@ -36,7 +36,8 @@ public class AppReceiver extends BroadcastReceiver {
         try {
             // All themes/icon packs go to the theme service for processing now so assume
             // isProcessing is always true when installing/replacing
-            if (Intent.ACTION_PACKAGE_ADDED.equals(action) && !isReplacing) {
+            if (Intent.ACTION_PACKAGE_ADDED.equals(action) && !isReplacing
+                    && !ProviderUtils.themeExistsInProvider(context, pkgName)) {
                 ThemePackageHelper.insertPackage(context, pkgName, true);
             } else if (Intent.ACTION_PACKAGE_FULLY_REMOVED.equals(action)) {
                 ThemePackageHelper.removePackage(context, pkgName);
