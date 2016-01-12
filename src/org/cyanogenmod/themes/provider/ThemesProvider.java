@@ -424,6 +424,13 @@ public class ThemesProvider extends ContentProvider {
                                     PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
                                     id, PreviewColumns.COL_KEY, previewKey));
                             delimeter = ",";
+                        } else if (ThemesColumns.MODIFIES_LIVE_LOCK_SCREEN.equals(component)) {
+                            String previewKey = PreviewColumns.LIVE_LOCK_SCREEN_PREVIEW;
+                            sb.append(delimeter).append(String.format(Locale.US,
+                                    "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s')",
+                                    PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
+                                    id, PreviewColumns.COL_KEY, previewKey));
+                            delimeter = ",";
                         }
                     }
                 }
