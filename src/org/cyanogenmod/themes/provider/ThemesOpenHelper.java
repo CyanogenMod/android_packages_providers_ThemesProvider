@@ -36,7 +36,7 @@ import android.util.Log;
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 19;
+    private static final int DATABASE_VERSION = 20;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
     private static final String OLD_SYSTEM_THEME_PKG_NAME = "holo";
@@ -131,6 +131,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 18) {
                 upgradeToVersion19(db);
                 oldVersion = 19;
+            }
+            if (oldVersion == 19) {
+                upgradeToVersion20(db);
+                oldVersion = 20;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -483,6 +487,14 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         }
     }
 
+    private void upgradeToVersion20(SQLiteDatabase db) {
+        //No default lock screen nor live lock screen for system theme
+        db.execSQL(String.format("UPDATE %s SET %s='0', %s='0' WHERE %s='%s'",
+                ThemesTable.TABLE_NAME, ThemesColumns.MODIFIES_LOCKSCREEN,
+                ThemesColumns.MODIFIES_LIVE_LOCK_SCREEN, ThemesColumns.PKG_NAME,
+                SYSTEM_THEME_PKG_NAME));
+    }
+
     private void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS " + ThemesTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MixnMatchTable.TABLE_NAME);
@@ -545,7 +557,6 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             values.put(ThemesColumns.MODIFIES_FONTS, 1);
             values.put(ThemesColumns.MODIFIES_ICONS, 1);
             values.put(ThemesColumns.MODIFIES_LAUNCHER, 1);
-            values.put(ThemesColumns.MODIFIES_LOCKSCREEN, 1);
             values.put(ThemesColumns.MODIFIES_NOTIFICATIONS, 1);
             values.put(ThemesColumns.MODIFIES_RINGTONES, 1);
             values.put(ThemesColumns.MODIFIES_STATUS_BAR, 1);
@@ -575,9 +586,16 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         public static void insertDefaults(SQLiteDatabase db) {
             ContentValues values = new ContentValues();
             long updateTime = System.currentTimeMillis();
-            values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
-            values.put(MixnMatchColumns.COL_UPDATE_TIME, updateTime);
             for(String key : MixnMatchColumns.ROWS) {
+                if (key.equals(MixnMatchColumns.KEY_LOCKSCREEN) ||
+                        key.equals(MixnMatchColumns.KEY_LIVE_LOCK_SCREEN)) {
+                    //No system default for lock wallpaper or live lock screen
+                    values.put(MixnMatchColumns.COL_VALUE, "");
+                    values.put(MixnMatchColumns.COL_UPDATE_TIME, 0);
+                } else {
+                    values.put(MixnMatchColumns.COL_VALUE, SYSTEM_THEME_PKG_NAME);
+                    values.put(MixnMatchColumns.COL_UPDATE_TIME, updateTime);
+                }
                 values.put(MixnMatchColumns.COL_KEY, key);
                 db.insert(TABLE_NAME, null, values);
             }
