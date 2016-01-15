@@ -48,6 +48,9 @@ public class SystemUiPreviewGenerator {
     private static final String IC_SYSBAR_RECENT = "ic_sysbar_recent";
     private static final String STATUS_BAR_ICON_SIZE = "status_bar_icon_size";
 
+    // Style used for tinting of wifi and signal icons
+    private static final String DUAL_TONE_LIGHT_THEME = "DualToneLightTheme";
+
     private Context mContext;
 
     public SystemUiPreviewGenerator(Context context) {
@@ -61,29 +64,42 @@ public class SystemUiPreviewGenerator {
      * @throws NameNotFoundException
      */
     public SystemUiItems generateSystemUiItems(String pkgName) throws NameNotFoundException {
-        PackageManager pm = mContext.getPackageManager();
-        Resources res = pm.getThemedResourcesForApplication(SYSTEMUI_PACKAGE, pkgName);
+        final PackageManager pm = mContext.getPackageManager();
+        final Context themeContext = mContext.createApplicationContext(
+                pm.getApplicationInfo(SYSTEMUI_PACKAGE, 0), pkgName, 0);
+        final Resources res = themeContext.getResources();
+        // Set the theme for use when tinting the signal icons
+        themeContext.setTheme(res.getIdentifier(DUAL_TONE_LIGHT_THEME, "style", SYSTEMUI_PACKAGE));
+
         int iconSize = res.getDimensionPixelSize(res.getIdentifier(STATUS_BAR_ICON_SIZE, "dimen",
                         SYSTEMUI_PACKAGE));
-
         SystemUiItems items = new SystemUiItems();
-        Drawable d = res.getDrawable(res.getIdentifier(BLUETOOTH_DRAWABLE, "drawable",
+
+        // Generate bluetooth icon
+        Drawable d = themeContext.getDrawable(res.getIdentifier(BLUETOOTH_DRAWABLE, "drawable",
                 SYSTEMUI_PACKAGE));
         items.bluetoothIcon = renderDrawableToBitmap(d, iconSize);
 
-        d = res.getDrawable(res.getIdentifier(WIFI_DRAWABLE, "drawable", SYSTEMUI_PACKAGE));
+        // Generate wifi icon
+        d = themeContext.getDrawable(res.getIdentifier(WIFI_DRAWABLE, "drawable",
+                SYSTEMUI_PACKAGE));
         items.wifiIcon = renderDrawableToBitmap(d, iconSize);
 
-        d = res.getDrawable(res.getIdentifier(SIGNAL_DRAWABLE, "drawable", SYSTEMUI_PACKAGE));
+        // Generate cell signal icon
+        d = themeContext.getDrawable(res.getIdentifier(SIGNAL_DRAWABLE, "drawable",
+                SYSTEMUI_PACKAGE));
         items.signalIcon = renderDrawableToBitmap(d, iconSize);
 
-        items.clockColor = res.getColor(res.getIdentifier(STATUS_BAR_CLOCK_COLOR, "color",
+        // Retrieve the color used for the clock
+        items.clockColor = themeContext.getColor(res.getIdentifier(STATUS_BAR_CLOCK_COLOR, "color",
                 SYSTEMUI_PACKAGE));
+
         // wifi margin no longer used in systemui
         items.wifiMarginEnd = 0;
         generateBatteryPreviews(res, items);
         generateBackgroundPreviews(res, items);
 
+        // Generate navigation bar icons
         items.navbarBack = BitmapFactory.decodeResource(res, res.getIdentifier(IC_SYSBAR_BACK,
                 "drawable", SYSTEMUI_PACKAGE));
         items.navbarHome = BitmapFactory.decodeResource(res, res.getIdentifier(IC_SYSBAR_HOME,
