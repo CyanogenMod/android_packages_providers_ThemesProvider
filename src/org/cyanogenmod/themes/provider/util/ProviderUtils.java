@@ -146,7 +146,7 @@ public class ProviderUtils {
 
         String newSelection = "";
         if (!TextUtils.isEmpty(selection)) {
-            newSelection += selection;
+            newSelection += "(" + selection;
         }
         List<String> projectionItems = getPreviewProjectionItems(projection);
         if (projectionItems != null && projectionItems.size() > 0) {
@@ -160,6 +160,9 @@ public class ProviderUtils {
                     newSelection += " OR ";
                 }
             }
+            newSelection += ")";
+        }
+        if (!TextUtils.isEmpty(selection)) {
             newSelection += ")";
         }
         return newSelection;
