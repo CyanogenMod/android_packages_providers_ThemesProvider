@@ -16,7 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Pružatelj tema</string>
-  <string name="unknown_app_name">Nepoznato</string>
-  <string name="controls_preview_button_text">Normalno</string>
+  <string name="app_name">Пастаўшчык тэмаў</string>
+  <string name="unknown_app_name">Невядомы</string>
+  <string name="controls_preview_button_text">Звычайная</string>
 </resources>
