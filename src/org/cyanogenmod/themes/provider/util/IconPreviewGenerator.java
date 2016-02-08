@@ -27,7 +27,8 @@ public class IconPreviewGenerator {
     private static final ComponentName COMPONENT_DIALERNEXT =
             new ComponentName("com.cyngn.dialer", "com.android.dialer.DialtactsActivity");
     private static final ComponentName COMPONENT_MESSAGING =
-            new ComponentName("com.android.mms", "com.android.mms.ui.ConversationList");
+            new ComponentName("com.android.messaging",
+                    "com.android.messaging.ui.conversationlist.ConversationListActivity");
     private static final ComponentName COMPONENT_CAMERANEXT =
             new ComponentName("com.cyngn.cameranext", "com.android.camera.CameraLauncher");
     private static final ComponentName COMPONENT_CAMERA =
