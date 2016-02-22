@@ -16,7 +16,7 @@
      limitations under the License.
 -->
 <resources>
-  <string name="app_name">Design-Speicher</string>
+  <string name="app_name">Design-Anbieter</string>
   <string name="unknown_app_name">Unbekannt</string>
   <string name="controls_preview_button_text">Normal</string>
 </resources>
