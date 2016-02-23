@@ -32,13 +32,15 @@ import cyanogenmod.providers.ThemesContract;
 import cyanogenmod.providers.ThemesContract.ThemesColumns;
 import cyanogenmod.providers.ThemesContract.MixnMatchColumns;
 import cyanogenmod.providers.ThemesContract.PreviewColumns;
+import cyanogenmod.providers.ThemesContract.ThemeMixColumns;
+import cyanogenmod.providers.ThemesContract.ThemeMixEntryColumns;
 
 import org.cyanogenmod.internal.util.ThemeUtils;
 
 public class ThemesOpenHelper extends SQLiteOpenHelper {
     private static final String TAG = ThemesOpenHelper.class.getName();
 
-    private static final int DATABASE_VERSION = 20;
+    private static final int DATABASE_VERSION = 21;
     private static final String DATABASE_NAME = "themes.db";
     private static final String SYSTEM_THEME_PKG_NAME = ThemeConfig.SYSTEM_DEFAULT;
     private static final String OLD_SYSTEM_THEME_PKG_NAME = "holo";
@@ -55,6 +57,8 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
         db.execSQL(ThemesTable.THEMES_TABLE_CREATE);
         db.execSQL(MixnMatchTable.MIXNMATCH_TABLE_CREATE);
         db.execSQL(PreviewsTable.PREVIEWS_TABLE_CREATE);
+        db.execSQL(ThemeMixesTable.THEME_MIXES_TABLE_CREATE);
+        db.execSQL(ThemeMixEntriesTable.THEME_MIX_ENTRIES_TABLE_CREATE);
 
         ThemesTable.insertSystemDefaults(db, mContext);
         MixnMatchTable.insertDefaults(db);
@@ -137,6 +141,10 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             if (oldVersion == 19) {
                 upgradeToVersion20(db);
                 oldVersion = 20;
+            }
+            if (oldVersion == 20) {
+                upgradeToVersion21(db);
+                oldVersion = 21;
             }
             if (oldVersion != DATABASE_VERSION) {
                 Log.e(TAG, "Recreating db because unknown database version: " + oldVersion);
@@ -497,10 +505,18 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
                 SYSTEM_THEME_PKG_NAME));
     }
 
+    private void upgradeToVersion21(SQLiteDatabase db) {
+        // create the theme mix tables
+        db.execSQL(ThemeMixesTable.THEME_MIXES_TABLE_CREATE);
+        db.execSQL(ThemeMixEntriesTable.THEME_MIX_ENTRIES_TABLE_CREATE);
+    }
+
     private void dropTables(SQLiteDatabase db) {
         db.execSQL("DROP TABLE IF EXISTS " + ThemesTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + MixnMatchTable.TABLE_NAME);
         db.execSQL("DROP TABLE IF EXISTS " + PreviewsTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + ThemeMixesTable.TABLE_NAME);
+        db.execSQL("DROP TABLE IF EXISTS " + ThemeMixEntriesTable.TABLE_NAME);
     }
 
     public static class ThemesTable {
@@ -646,6 +662,33 @@ public class ThemesOpenHelper extends SQLiteOpenHelper {
             intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, SYSTEM_THEME_PKG_NAME);
             context.startService(intent);
         }
+    }
+
+    public static class ThemeMixesTable {
+        protected static final String TABLE_NAME = "theme_mixes";
+
+        private static final String THEME_MIXES_TABLE_CREATE =
+                "CREATE TABLE " + TABLE_NAME + " (" +
+                        ThemeMixColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT," +
+                        ThemeMixColumns.TITLE + " TEXT NOT NULL " +
+                        ")";
+    }
+
+    public static class ThemeMixEntriesTable {
+        protected static final String TABLE_NAME = "theme_mix_entries";
+
+        private static final String THEME_MIX_ENTRIES_TABLE_CREATE =
+                "CREATE TABLE " + TABLE_NAME + " (" +
+                        ThemeMixEntryColumns._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        ThemeMixEntryColumns.THEME_MIX_ID + " INTEGER NOT NULL, " +
+                        ThemeMixEntryColumns.COMPONENT_TYPE + " TEXT NON NULL, " +
+                        ThemeMixEntryColumns.COMPONENT_ID + " INTEGER DEFAULT 0," +
+                        ThemeMixEntryColumns.PACKAGE_NAME + " TEXT NOT NULL, " +
+                        ThemeMixEntryColumns.THEME_NAME + " TEXT NOT NULL, " +
+                        ThemeMixEntryColumns.IS_INSTALLED + " INTEGER DEFAULT 1, " +
+                        "FOREIGN KEY(" + ThemeMixEntryColumns.THEME_MIX_ID + ") REFERENCES " +
+                        ThemeMixesTable.TABLE_NAME + "(" + ThemeMixColumns._ID + ")" +
+                        ")";
     }
 
     private static boolean isSystemDefault(Context context) {
