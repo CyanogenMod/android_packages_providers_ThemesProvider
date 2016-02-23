@@ -18,17 +18,17 @@ package org.cyanogenmod.themes.provider.util;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
-import android.content.pm.ThemeUtils;
 import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.content.res.ThemeConfig;
 import android.graphics.Bitmap;
-import android.provider.ThemesContract.PreviewColumns;
 import android.text.TextUtils;
 
+import cyanogenmod.providers.ThemesContract.PreviewColumns;
+
+import org.cyanogenmod.internal.util.ThemeUtils;
 import org.cyanogenmod.themes.provider.R;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;

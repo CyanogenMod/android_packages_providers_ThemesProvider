@@ -27,9 +27,11 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.os.FileUtils;
-import android.provider.ThemesContract.ThemesColumns;
-import android.provider.ThemesContract.PreviewColumns;
 import android.util.Log;
+
+import cyanogenmod.providers.ThemesContract.ThemesColumns;
+import cyanogenmod.providers.ThemesContract.PreviewColumns;
+
 import org.cyanogenmod.themes.provider.util.BootAnimationPreviewGenerator;
 import org.cyanogenmod.themes.provider.util.IconPreviewGenerator;
 import org.cyanogenmod.themes.provider.util.IconPreviewGenerator.IconItems;

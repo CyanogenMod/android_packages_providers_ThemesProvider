@@ -5,7 +5,7 @@
     android:versionCode="2"
     android:versionName="2.0" >
 
-    <uses-permission android:name="android.permission.ACCESS_THEME_MANAGER" />
+    <uses-permission android:name="cyanogenmod.permission.ACCESS_THEME_MANAGER" />
 
     <application
         android:allowBackup="true"

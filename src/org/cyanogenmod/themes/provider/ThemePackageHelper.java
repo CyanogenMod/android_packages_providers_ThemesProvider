@@ -22,21 +22,22 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.pm.ThemeInfo;
-import android.content.pm.ThemeUtils;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
-import android.content.res.ThemeChangeRequest;
-import android.content.res.ThemeChangeRequest.RequestType;
 import android.content.res.ThemeConfig;
-import android.content.res.ThemeManager;
 import android.database.Cursor;
-import android.provider.ThemesContract;
-import android.provider.ThemesContract.MixnMatchColumns;
-import android.provider.ThemesContract.ThemesColumns;
-import android.provider.ThemesContract.ThemesColumns.InstallState;
 import android.util.Log;
 
+import cyanogenmod.providers.ThemesContract;
+import cyanogenmod.providers.ThemesContract.MixnMatchColumns;
+import cyanogenmod.providers.ThemesContract.ThemesColumns;
+import cyanogenmod.providers.ThemesContract.ThemesColumns.InstallState;
+import cyanogenmod.themes.ThemeManager;
+import cyanogenmod.themes.ThemeChangeRequest;
+import cyanogenmod.themes.ThemeChangeRequest.RequestType;
+
 import org.cyanogenmod.internal.util.CmLockPatternUtils;
+import org.cyanogenmod.internal.util.ThemeUtils;
 import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
 import java.io.IOException;
@@ -275,7 +276,7 @@ public class ThemePackageHelper {
         mixnmatch.close();
 
         builder.setRequestType(RequestType.THEME_REMOVED);
-        ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
+        ThemeManager manager = ThemeManager.getInstance();
         manager.requestThemeChange(builder.build(), false);
 
         // Delete the theme from the db
@@ -409,7 +410,7 @@ public class ThemePackageHelper {
         }
 
         builder.setRequestType(RequestType.THEME_UPDATED);
-        ThemeManager manager = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
+        ThemeManager manager = ThemeManager.getInstance();
         manager.requestThemeChange(builder.build(), false);
     }
 }

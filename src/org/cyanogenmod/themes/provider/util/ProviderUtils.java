@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 The CyanogenMod Project
+ * Copyright (C) 2015-2016 The CyanogenMod Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,19 +15,18 @@
  */
 package org.cyanogenmod.themes.provider.util;
 
-import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.ThemeManager;
 import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
-import android.provider.ThemesContract;
-import android.provider.ThemesContract.MixnMatchColumns;
-import android.provider.ThemesContract.PreviewColumns;
-import android.provider.ThemesContract.ThemesColumns;
 import android.text.TextUtils;
-import org.cyanogenmod.themes.provider.ThemesOpenHelper;
+
+import cyanogenmod.platform.Manifest;
+import cyanogenmod.providers.ThemesContract;
+import cyanogenmod.providers.ThemesContract.MixnMatchColumns;
+import cyanogenmod.providers.ThemesContract.PreviewColumns;
+import cyanogenmod.providers.ThemesContract.ThemesColumns;
+import cyanogenmod.themes.ThemeManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -58,14 +57,14 @@ public class ProviderUtils {
     }
 
     /**
-     * Queries the {@link android.content.res.ThemeManager} to check if the theme is currently
-     * being processed by {@link com.android.server.ThemeService}
+     * Queries the {@link ThemeManager} to check if the theme is currently
+     * being processed by {@link org.cyanogenmod.platform.internal.ThemeManagerService}
      * @param context
      * @param pkgName
      * @return True if the theme is being processed or queued up for processing
      */
     public static boolean isThemeBeingProcessed(Context context, String pkgName) {
-        ThemeManager tm = (ThemeManager) context.getSystemService(Context.THEME_SERVICE);
+        ThemeManager tm = ThemeManager.getInstance();
         return tm.isThemeBeingProcessed(pkgName);
     }
 
@@ -209,35 +208,35 @@ public class ProviderUtils {
     }
 
     /**
-     * Sends the {@link android.provider.ThemesContract.Intent#ACTION_THEME_INSTALLED} action
+     * Sends the {@link cyanogenmod.content.Intent#ACTION_THEME_INSTALLED} action
      * @param context
      * @param pkgName
      */
     public static void sendThemeInstalledBroadcast(Context context, String pkgName) {
-        Intent intent = new Intent(ThemesContract.Intent.ACTION_THEME_INSTALLED,
-                Uri.fromParts(ThemesContract.Intent.URI_SCHEME_PACKAGE, pkgName, null));
+        Intent intent = new Intent(cyanogenmod.content.Intent.ACTION_THEME_INSTALLED,
+                Uri.fromParts(cyanogenmod.content.Intent.URI_SCHEME_PACKAGE, pkgName, null));
         context.sendBroadcast(intent, Manifest.permission.READ_THEMES);
     }
 
     /**
-     * Sends the {@link android.provider.ThemesContract.Intent#ACTION_THEME_UPDATED} action
+     * Sends the {@link cyanogenmod.content.Intent#ACTION_THEME_UPDATED} action
      * @param context
      * @param pkgName
      */
     public static void sendThemeUpdatedBroadcast(Context context, String pkgName) {
-        Intent intent = new Intent(ThemesContract.Intent.ACTION_THEME_UPDATED,
-                Uri.fromParts(ThemesContract.Intent.URI_SCHEME_PACKAGE, pkgName, null));
+        Intent intent = new Intent(cyanogenmod.content.Intent.ACTION_THEME_UPDATED,
+                Uri.fromParts(cyanogenmod.content.Intent.URI_SCHEME_PACKAGE, pkgName, null));
         context.sendBroadcast(intent, Manifest.permission.READ_THEMES);
     }
 
     /**
-     * Sends the {@link android.provider.ThemesContract.Intent#ACTION_THEME_REMOVED} action
+     * Sends the {@link cyanogenmod.content.Intent#ACTION_THEME_REMOVED} action
      * @param context
      * @param pkgName
      */
     public static void sendThemeRemovedBroadcast(Context context, String pkgName) {
-        Intent intent = new Intent(ThemesContract.Intent.ACTION_THEME_REMOVED,
-                Uri.fromParts(ThemesContract.Intent.URI_SCHEME_PACKAGE, pkgName, null));
+        Intent intent = new Intent(cyanogenmod.content.Intent.ACTION_THEME_REMOVED,
+                Uri.fromParts(cyanogenmod.content.Intent.URI_SCHEME_PACKAGE, pkgName, null));
         context.sendBroadcast(intent, Manifest.permission.READ_THEMES);
     }
 }
