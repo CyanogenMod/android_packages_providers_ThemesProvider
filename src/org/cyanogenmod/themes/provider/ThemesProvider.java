@@ -16,6 +16,7 @@
 package org.cyanogenmod.themes.provider;
 
 
+import android.annotation.NonNull;
 import android.content.ContentProvider;
 import android.content.ContentUris;
 import android.content.ContentValues;
@@ -27,6 +28,7 @@ import android.content.UriMatcher;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.database.Cursor;
+import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
@@ -39,6 +41,8 @@ import cyanogenmod.providers.ThemesContract;
 import cyanogenmod.providers.ThemesContract.MixnMatchColumns;
 import cyanogenmod.providers.ThemesContract.PreviewColumns;
 import cyanogenmod.providers.ThemesContract.ThemesColumns;
+import cyanogenmod.providers.ThemesContract.ThemeMixColumns;
+import cyanogenmod.providers.ThemesContract.ThemeMixEntryColumns;
 import cyanogenmod.themes.ThemeManager;
 import cyanogenmod.themes.ThemeChangeRequest;
 import cyanogenmod.themes.ThemeChangeRequest.RequestType;
@@ -47,6 +51,8 @@ import org.cyanogenmod.internal.util.ThemeUtils;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.MixnMatchTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.PreviewsTable;
 import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemesTable;
+import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemeMixesTable;
+import org.cyanogenmod.themes.provider.ThemesOpenHelper.ThemeMixEntriesTable;
 import org.cyanogenmod.themes.provider.util.PreviewUtils;
 import org.cyanogenmod.themes.provider.util.ProviderUtils;
 
@@ -72,6 +78,10 @@ public class ThemesProvider extends ContentProvider {
     private static final int PREVIEWS_ID = 6;
     private static final int APPLIED_PREVIEWS = 7;
     private static final int COMPONENTS_PREVIEWS = 8;
+    private static final int THEME_MIXES = 9;
+    private static final int THEME_MIX_ENTRIES = 10;
+    private static final int THEME_MIX_ENTRIES_ID = 11;
+    private static final int THEME_MIX_PREVIEWS = 12;
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
@@ -89,6 +99,10 @@ public class ThemesProvider extends ContentProvider {
         sUriMatcher.addURI(ThemesContract.AUTHORITY, "previews/#", PREVIEWS_ID);
         sUriMatcher.addURI(ThemesContract.AUTHORITY, "applied_previews/", APPLIED_PREVIEWS);
         sUriMatcher.addURI(ThemesContract.AUTHORITY, "components_previews/", COMPONENTS_PREVIEWS);
+        sUriMatcher.addURI(ThemesContract.AUTHORITY, "theme_mixes/", THEME_MIXES);
+        sUriMatcher.addURI(ThemesContract.AUTHORITY, "theme_mix_entries/", THEME_MIX_ENTRIES);
+        sUriMatcher.addURI(ThemesContract.AUTHORITY, "theme_mix_entries/#", THEME_MIX_ENTRIES_ID);
+        sUriMatcher.addURI(ThemesContract.AUTHORITY, "theme_mix_previews/#", THEME_MIX_PREVIEWS);
     }
 
     public static void setActiveTheme(Context context, String pkgName) {
@@ -134,6 +148,13 @@ public class ThemesProvider extends ContentProvider {
                 String themePreviewsDir = filesDir + File.separator +
                         PreviewUtils.PREVIEWS_DIR + File.separator + pkgName;
                 PreviewGenerationService.clearThemePreviewsDir(themePreviewsDir);
+
+                // mark theme mix entries for this package as uninstalled
+                final String where = ThemeMixEntryColumns.PACKAGE_NAME + "=?";
+                final String[] whereArgs = { pkgName };
+                final ContentValues values = new ContentValues();
+                values.put(ThemeMixEntryColumns.IS_INSTALLED, 0);
+                sqlDB.update(ThemeMixEntriesTable.TABLE_NAME, values, where, whereArgs);
             }
             c.close();
 
@@ -163,6 +184,40 @@ public class ThemesProvider extends ContentProvider {
             return rowsDeleted;
         case MIXNMATCH:
             throw new UnsupportedOperationException("Cannot delete rows in MixNMatch table");
+        case THEME_MIXES:
+            sqlDB = mDatabase.getWritableDatabase();
+            // Get the theme's _id and delete preview images
+            columns = new String[] { ThemeMixColumns._ID };
+            c = sqlDB.query(ThemeMixesTable.TABLE_NAME, columns, selection,
+                    selectionArgs, null, null, null);
+            if (c == null) return 0;
+
+            if (c.moveToFirst()) {
+                idx = c.getColumnIndex(ThemeMixColumns._ID);
+                int mixId = c.getInt(idx);
+                if (mixId != -1) {
+                    // delete all mix entries associated with this mix
+                    sqlDB.delete(ThemeMixEntriesTable.TABLE_NAME,
+                            ThemeMixEntryColumns.THEME_MIX_ID + "=" + mixId, null);
+                }
+                rowsDeleted = sqlDB.delete(ThemeMixesTable.TABLE_NAME, selection, selectionArgs);
+            }
+            c.close();
+            if (rowsDeleted > 0) {
+                getContext().getContentResolver().notifyChange(uri, null);
+            }
+            return rowsDeleted;
+        case THEME_MIX_ENTRIES:
+        case THEME_MIX_ENTRIES_ID:
+            sqlDB = mDatabase.getWritableDatabase();
+            // Get the theme's _id and delete preview images
+            rowsDeleted = sqlDB.delete(ThemeMixEntriesTable.TABLE_NAME,
+                        ThemeMixEntryColumns.THEME_MIX_ID + "=" + c.getInt(idx), null);
+
+            if (rowsDeleted > 0) {
+                getContext().getContentResolver().notifyChange(uri, null);
+            }
+            return rowsDeleted;
         }
         return 0;
     }
@@ -183,6 +238,12 @@ public class ThemesProvider extends ContentProvider {
              return "vnd.android.cursor.dir/previews";
         case PREVIEWS_ID:
              return "vnd.android.cursor.item/previews";
+        case THEME_MIXES:
+            return "vnd.android.cursor.dir/theme_mixes";
+        case THEME_MIX_ENTRIES:
+            return "vnd.android.cursor.dir/theme_mix_entries";
+        case THEME_MIX_ENTRIES_ID:
+            return "vnd.android.cursor.item/theme_mix_entries";
         default:
             return null;
         }
@@ -191,6 +252,7 @@ public class ThemesProvider extends ContentProvider {
     @Override
     public Uri insert(Uri uri, ContentValues values) {
         int uriType = sUriMatcher.match(uri);
+        String packageName = values.getAsString(ThemesColumns.PKG_NAME);
         SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
         long id = 0;
         switch (uriType) {
@@ -201,11 +263,18 @@ public class ThemesProvider extends ContentProvider {
                 processPreviews = state == ThemesColumns.InstallState.INSTALLED;
             }
             id = sqlDB.insert(ThemesOpenHelper.ThemesTable.TABLE_NAME, null, values);
+
+            // Update themes_mix_entries when a theme is re installed.
+            final String where = ThemeMixEntryColumns.PACKAGE_NAME + "=?";
+            final String[] whereArgs = { packageName };
+            final ContentValues values_new = new ContentValues();
+            values_new.put(ThemeMixEntryColumns.IS_INSTALLED, 1);
+            sqlDB.update(ThemeMixEntriesTable.TABLE_NAME, values_new, where, whereArgs);
+
             if (processPreviews) {
                 Intent intent = new Intent(getContext(), PreviewGenerationService.class);
                 intent.setAction(PreviewGenerationService.ACTION_INSERT);
-                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME,
-                        values.getAsString(ThemesColumns.PKG_NAME));
+                intent.putExtra(PreviewGenerationService.EXTRA_PKG_NAME, packageName);
                 getContext().startService(intent);
             }
             break;
@@ -214,13 +283,58 @@ public class ThemesProvider extends ContentProvider {
         case PREVIEWS:
             id = sqlDB.insert(ThemesOpenHelper.PreviewsTable.TABLE_NAME, null, values);
             break;
+        case THEME_MIXES:
+            id = sqlDB.insert(ThemeMixesTable.TABLE_NAME, null, values);
+            break;
+        case THEME_MIX_ENTRIES:
+            id = sqlDB.insert(ThemeMixEntriesTable.TABLE_NAME, null, values);
+            break;
         default:
         }
         if (id >= 0) {
-            ContentUris.withAppendedId(uri, id);
+            uri = ContentUris.withAppendedId(uri, id);
             getContext().getContentResolver().notifyChange(uri, null);
         }
         return uri;
+    }
+
+    @Override
+    public int bulkInsert(@NonNull Uri uri, @NonNull ContentValues[] values) {
+        int uriType = sUriMatcher.match(uri);
+        switch (uriType) {
+            case MIXNMATCH:
+            case MIXNMATCH_KEY:
+            case THEMES:
+            case THEMES_ID:
+            case PREVIEWS:
+            case PREVIEWS_ID:
+            case APPLIED_PREVIEWS:
+            case COMPONENTS_PREVIEWS:
+            case THEME_MIXES:
+            case THEME_MIX_PREVIEWS:
+            case THEME_MIX_ENTRIES_ID:
+                throw new UnsupportedOperationException("Bulk insert not supported");
+            case THEME_MIX_ENTRIES:
+                int rowsInserted = 0;
+                SQLiteDatabase sqlDB = mDatabase.getWritableDatabase();
+                sqlDB.beginTransaction();
+                try {
+                    for (ContentValues value : values) {
+                        long id = sqlDB.insertOrThrow(ThemeMixEntriesTable.TABLE_NAME, null, value);
+                        if (id <= 0) {
+                            throw new SQLException("Failed to insert row into " + uri);
+                        }
+                        rowsInserted++;
+                    }
+                    sqlDB.setTransactionSuccessful();
+                    getContext().getContentResolver().notifyChange(uri, null);
+                } finally {
+                    sqlDB.endTransaction();
+                }
+                return rowsInserted;
+        }
+
+        return 0;
     }
 
     @Override
@@ -286,6 +400,14 @@ public class ThemesProvider extends ContentProvider {
             break;
         case APPLIED_PREVIEWS:
             return getAppliedPreviews(db);
+        case THEME_MIXES:
+            queryBuilder.setTables(ThemeMixesTable.TABLE_NAME);
+            break;
+        case THEME_MIX_ENTRIES:
+            queryBuilder.setTables(ThemeMixEntriesTable.TABLE_NAME);
+            break;
+        case THEME_MIX_PREVIEWS:
+            return getThemeMixPreviews(db, ContentUris.parseId(uri));
         default:
             return null;
         }
@@ -353,6 +475,16 @@ public class ThemesProvider extends ContentProvider {
             rowsUpdated = sqlDB.update(PreviewsTable.TABLE_NAME, values, selection, selectionArgs);
             getContext().getContentResolver().notifyChange(uri, null);
             break;
+        case THEME_MIXES:
+                rowsUpdated = sqlDB.update
+                        (ThemeMixesTable.TABLE_NAME, values, selection, selectionArgs);
+                getContext().getContentResolver().notifyChange(uri,null);
+                break;
+        case THEME_MIX_ENTRIES:
+                rowsUpdated = sqlDB.update
+                        (ThemeMixEntriesTable.TABLE_NAME, values, selection, selectionArgs);
+                getContext().getContentResolver().notifyChange(uri,null);
+                break;
         }
         return rowsUpdated;
     }
@@ -433,6 +565,118 @@ public class ThemesProvider extends ContentProvider {
                                     "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s')",
                                     PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
                                     id, PreviewColumns.COL_KEY, previewKey));
+                            delimeter = ",";
+                        }
+                    }
+                }
+            }
+            c.close();
+            sb.append(";");
+            return db.rawQuery(sb.toString(), null);
+        }
+        return null;
+    }
+
+    /**
+     * Queries the currently applied components and creates a SQLite statement consisting
+     * of a series of (SELECT ...) statements
+     * @param db Readable database
+     * @return
+     */
+    private Cursor getThemeMixPreviews(SQLiteDatabase db, long themeMixId) {
+        String[] projection = {ThemeMixEntryColumns.COMPONENT_TYPE,
+                ThemeMixEntryColumns.COMPONENT_ID,
+                ThemeMixEntryColumns.PACKAGE_NAME};
+        String selection = ThemeMixEntryColumns.THEME_MIX_ID + "=? AND " +
+                ThemeMixEntryColumns.IS_INSTALLED + "=?";
+        String[] selectionArgs = { Long.toString(themeMixId), "1" };
+        Cursor c = db.query(ThemeMixEntriesTable.TABLE_NAME, projection, selection, selectionArgs,
+                null, null, null);
+        if (c != null) {
+            StringBuilder sb = new StringBuilder("SELECT * FROM ");
+            String delimeter = "";
+            while (c.moveToNext()) {
+                String component = c.getString(0);
+                int componentId = c.getInt(1);
+                String pkgName = c.getString(2);
+                if (component != null && pkgName != null) {
+                    // We need to get the theme's id using its package name
+                    String[] columns = { ThemesColumns._ID };
+                    selection = ThemesColumns.PKG_NAME + "=? AND " + component + "=?";
+                    selectionArgs = new String[] {pkgName, "1"};
+                    Cursor current = db.query(ThemesTable.TABLE_NAME, columns, selection,
+                            selectionArgs, null, null, null);
+                    int id = -1;
+                    if (current != null) {
+                        if (current.moveToFirst()) id = current.getInt(0);
+                        current.close();
+                    }
+                    if (id >= 0) {
+                        if (ThemesColumns.MODIFIES_STATUS_BAR.equals(component)) {
+                            for (String previewKey : PreviewsTable.STATUS_BAR_PREVIEW_KEYS) {
+                                sb.append(delimeter).append(String.format(Locale.US,
+                                        "(SELECT %s AS %s FROM previews WHERE %s=%d " +
+                                                "AND %s='%s' AND %s=%d)",
+                                        PreviewColumns.COL_VALUE, previewKey,
+                                        PreviewColumns.THEME_ID, id, PreviewColumns.COL_KEY,
+                                        previewKey, PreviewColumns.COMPONENT_ID, componentId));
+                                delimeter = ",";
+                            }
+                        } else if (ThemesColumns.MODIFIES_ICONS.equals(component)) {
+                            for (String previewKey : PreviewsTable.ICON_PREVIEW_KEYS) {
+                                sb.append(delimeter).append(String.format(Locale.US,
+                                        "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                                "AND %s=%d)",
+                                        PreviewColumns.COL_VALUE, previewKey,
+                                        PreviewColumns.THEME_ID, id, PreviewColumns.COL_KEY,
+                                        previewKey, PreviewColumns.COMPONENT_ID, componentId));
+                                delimeter = ",";
+                            }
+                        } else if (ThemesColumns.MODIFIES_LAUNCHER.equals(component)) {
+                            String previewKey = PreviewColumns.WALLPAPER_PREVIEW;
+                            sb.append(delimeter).append(String.format(Locale.US,
+                                    "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                            "AND %s=%d)",
+                                    PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
+                                    id, PreviewColumns.COL_KEY, previewKey,
+                                    PreviewColumns.COMPONENT_ID, componentId));
+                            delimeter = ",";
+                        } else if (ThemesColumns.MODIFIES_NAVIGATION_BAR.equals(component)) {
+                            for (String previewKey : PreviewsTable.NAVIGATION_BAR_PREVIEW_KEYS) {
+                                sb.append(delimeter).append(String.format(Locale.US,
+                                        "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                                "AND %s=%d)",
+                                        PreviewColumns.COL_VALUE, previewKey,
+                                        PreviewColumns.THEME_ID, id, PreviewColumns.COL_KEY,
+                                        previewKey, PreviewColumns.COMPONENT_ID, componentId));
+                                delimeter = ",";
+                            }
+                        } else if (ThemesColumns.MODIFIES_OVERLAYS.equals(component)) {
+                            String previewKey = PreviewColumns.STYLE_PREVIEW;
+                            sb.append(delimeter).append(String.format(Locale.US,
+                                    "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                            "AND %s=%d)",
+                                    PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
+                                    id, PreviewColumns.COL_KEY, previewKey,
+                                    PreviewColumns.COMPONENT_ID, componentId));
+                            delimeter = ",";
+                        } else if (ThemesColumns.MODIFIES_LIVE_LOCK_SCREEN.equals(component)) {
+                            String previewKey = PreviewColumns.LIVE_LOCK_SCREEN_PREVIEW;
+                            sb.append(delimeter).append(String.format(Locale.US,
+                                    "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                            "AND %s=%d)",
+                                    PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
+                                    id, PreviewColumns.COL_KEY, previewKey,
+                                    PreviewColumns.COMPONENT_ID, componentId));
+                            delimeter = ",";
+                        } else if (ThemesColumns.MODIFIES_LOCKSCREEN.equals(component)) {
+                            String previewKey = PreviewColumns.LOCK_WALLPAPER_PREVIEW;
+                            sb.append(delimeter).append(String.format(Locale.US,
+                                    "(SELECT %s AS %s FROM previews WHERE %s=%d AND %s='%s' " +
+                                            "AND %s=%d)",
+                                    PreviewColumns.COL_VALUE, previewKey, PreviewColumns.THEME_ID,
+                                    id, PreviewColumns.COL_KEY, previewKey,
+                                    PreviewColumns.COMPONENT_ID, componentId));
                             delimeter = ",";
                         }
                     }
