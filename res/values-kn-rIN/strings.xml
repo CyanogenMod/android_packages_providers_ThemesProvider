@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">ಥೀಮ್ಸ್ ಪೂರೈಕೆದಾರ</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">ಅಜ್ಞಾತ</string>
   <string name="controls_preview_button_text">ಸಹಜ</string>
 </resources>

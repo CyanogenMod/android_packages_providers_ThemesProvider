@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">Nhà cung cấp chủ đề</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">Không xác định</string>
   <string name="controls_preview_button_text">Bình thường</string>
 </resources>

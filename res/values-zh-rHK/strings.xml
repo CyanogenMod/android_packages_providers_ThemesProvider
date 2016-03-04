@@ -17,5 +17,6 @@
 -->
 <resources>
   <string name="app_name">主題提供者</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">不明</string>
 </resources>
