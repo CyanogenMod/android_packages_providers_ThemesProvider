@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">테마 공급자</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">알 수 없음</string>
   <string name="controls_preview_button_text">보통</string>
 </resources>
