@@ -15,8 +15,8 @@
         <provider
             android:name="org.cyanogenmod.themes.provider.ThemesProvider"
             android:authorities="com.cyanogenmod.themes"
-            android:readPermission="android.permission.READ_THEMES"
-            android:writePermission="android.permission.WRITE_THEMES"
+            android:readPermission="cyanogenmod.permission.READ_THEMES"
+            android:writePermission="cyanogenmod.permission.WRITE_THEMES"
             android:exported="true" />
 
         <service android:name=".PreviewGenerationService" >
