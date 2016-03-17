@@ -16,5 +16,8 @@
      limitations under the License.
 -->
 <resources>
+  <string name="app_name">ବିଷୟଗୁଡିକ‍ ପ୍ରୋଭାଇଡର୍‍</string>
   <!-- For when an "legacy" icon pack does not have an app name -->
+  <string name="unknown_app_name">ଅଜ୍ଞାତ</string>
+  <string name="controls_preview_button_text">ସାଧାରଣ</string>
 </resources>

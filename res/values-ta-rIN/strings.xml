@@ -16,5 +16,8 @@
      limitations under the License.
 -->
 <resources>
+  <string name="app_name">கருப்பொருட்கள் வழங்குநர்</string>
   <!-- For when an "legacy" icon pack does not have an app name -->
+  <string name="unknown_app_name">தெரியாதது</string>
+  <string name="controls_preview_button_text">இயல்பு</string>
 </resources>

@@ -16,5 +16,8 @@
      limitations under the License.
 -->
 <resources>
+  <string name="app_name">തീമുകളുടെ ദാതാവ്</string>
   <!-- For when an "legacy" icon pack does not have an app name -->
+  <string name="unknown_app_name">അജ്ഞാതം</string>
+  <string name="controls_preview_button_text">സാധാരണ</string>
 </resources>

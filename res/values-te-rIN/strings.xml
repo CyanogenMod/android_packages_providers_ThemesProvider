@@ -16,5 +16,8 @@
      limitations under the License.
 -->
 <resources>
+  <string name="app_name">థీముల ప్రధాత</string>
   <!-- For when an "legacy" icon pack does not have an app name -->
+  <string name="unknown_app_name">తెలియదు</string>
+  <string name="controls_preview_button_text">సాధారణం</string>
 </resources>
