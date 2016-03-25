@@ -276,7 +276,7 @@ public class ThemePackageHelper {
         mixnmatch.close();
 
         builder.setRequestType(RequestType.THEME_REMOVED);
-        ThemeManager manager = ThemeManager.getInstance();
+        ThemeManager manager = ThemeManager.getInstance(context);
         manager.requestThemeChange(builder.build(), false);
 
         // Delete the theme from the db
@@ -410,7 +410,7 @@ public class ThemePackageHelper {
         }
 
         builder.setRequestType(RequestType.THEME_UPDATED);
-        ThemeManager manager = ThemeManager.getInstance();
+        ThemeManager manager = ThemeManager.getInstance(context);
         manager.requestThemeChange(builder.build(), false);
     }
 }

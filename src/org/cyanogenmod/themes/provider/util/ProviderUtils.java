@@ -64,7 +64,7 @@ public class ProviderUtils {
      * @return True if the theme is being processed or queued up for processing
      */
     public static boolean isThemeBeingProcessed(Context context, String pkgName) {
-        ThemeManager tm = ThemeManager.getInstance();
+        ThemeManager tm = ThemeManager.getInstance(context);
         return tm.isThemeBeingProcessed(pkgName);
     }
 

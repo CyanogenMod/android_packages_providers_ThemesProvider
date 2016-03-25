@@ -597,7 +597,7 @@ public class ThemesProvider extends ContentProvider {
             builder.setRequestType(RequestType.THEME_REMOVED);
             ThemeChangeRequest request = builder.build();
             if (request.getNumChangesRequested() > 0) {
-                ThemeManager mService = ThemeManager.getInstance();
+                ThemeManager mService = ThemeManager.getInstance(getContext());
                 mService.requestThemeChange(request, false);
             }
 
