@@ -18,6 +18,7 @@ package org.cyanogenmod.themes.provider.util;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 public class LayoutRenderUtils {
@@ -34,6 +35,17 @@ public class LayoutRenderUtils {
 
         // Assign a size and position to the view and all of its descendants
         view.layout(0, 0, view.getMeasuredWidth(), view.getMeasuredHeight());
+
+        // Make sure views with stateful drawables are in their correct state
+        if (view instanceof ViewGroup) {
+            final ViewGroup vg = (ViewGroup) view;
+            final int N = vg.getChildCount();
+            for (int i = 0; i < N; i++) {
+                vg.getChildAt(i).jumpDrawablesToCurrentState();
+            }
+        } else {
+            view.jumpDrawablesToCurrentState();
+        }
 
         // Create the bitmap
         Bitmap bitmap = Bitmap.createBitmap(view.getMeasuredWidth(),
