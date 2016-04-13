@@ -44,15 +44,16 @@
 
         <Button
             android:layout_width="96dp"
-            android:layout_height="30dp"
+            android:layout_height="42dp"
             android:layout_marginEnd="72dp"
-            android:textSize="10dp"
+            android:textSize="8dp"
             android:text="@string/controls_preview_button_text" />
 
         <Switch
             android:layout_width="96dp"
             android:layout_height="24dp"
-            android:checked="true"/>
+            android:checked="true"
+            android:tint="?*android:attr/colorControlActivated" />
 
     </LinearLayout>
 
@@ -70,35 +71,39 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content">
 
-        <ImageView
+        <CheckBox
             android:layout_width="32dp"
             android:layout_height="32dp"
+            android:checked="false"
             android:layout_gravity="bottom"
-            android:src="@*android:drawable/ic_checkbox_checked" />
+            android:tint="?*android:attr/colorControlNormal" />
 
-        <ImageView
+        <CheckBox
             android:layout_width="32dp"
             android:layout_height="32dp"
+            android:checked="true"
             android:layout_gravity="bottom"
             android:layout_marginEnd="44dp"
-            android:src="@*android:drawable/ic_checkbox_checked" />
+            android:tint="?*android:attr/colorControlActivated" />
 
         <ProgressBar
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginEnd="44dp" />
 
-        <ImageView
+        <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:checked="false"
             android:layout_gravity="bottom"
-            android:src="@*android:drawable/btn_radio_to_on_mtrl_000" />
+            android:tint="?*android:attr/colorControlNormal" />
 
-        <ImageView
+        <RadioButton
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
-            android:src="@*android:drawable/btn_radio_to_on_mtrl_015" />
+            android:checked="true"
+            android:tint="?*android:attr/colorControlActivated" />
 
     </LinearLayout>
 
