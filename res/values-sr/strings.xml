@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">Провајдер тема</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">Непознато</string>
   <string name="controls_preview_button_text">Нормално</string>
 </resources>
