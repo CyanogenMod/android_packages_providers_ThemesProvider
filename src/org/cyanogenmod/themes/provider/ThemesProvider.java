@@ -31,6 +31,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.os.Handler;
+import android.os.Process;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -493,7 +494,7 @@ public class ThemesProvider extends ContentProvider {
         }
 
         public void run() {
-            android.os.Process.setThreadPriority(Thread.MIN_PRIORITY);
+            Process.setThreadPriority(Process.THREAD_PRIORITY_BACKGROUND);
 
             long start;
 
