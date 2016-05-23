@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">Témakezelő</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">Ismeretlen</string>
   <string name="controls_preview_button_text">Normál</string>
 </resources>
