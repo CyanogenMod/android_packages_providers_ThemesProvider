@@ -15,6 +15,7 @@
  */
 package org.cyanogenmod.themes.provider.util;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.os.FileUtils;
 import android.util.Log;
@@ -44,6 +45,26 @@ public class PreviewUtils {
 
     public static String getPreviewsDir(String baseDir) {
         return baseDir + File.separator + PREVIEWS_DIR;
+    }
+
+    public static void ensureCorrectPreviewPermissions(Context context) {
+        File previewsDir = new File(getPreviewsDir(context.getFilesDir().getAbsolutePath()));
+        if (previewsDir.exists()) {
+            ensureCorrectPreviewPermissions(previewsDir);
+        }
+    }
+
+    private static void ensureCorrectPreviewPermissions(File file) {
+        int mode = 0;
+        if (file.isDirectory()) {
+            for (File f : file.listFiles()) {
+                ensureCorrectPreviewPermissions(f);
+            }
+            mode = FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH | FileUtils.S_IXOTH;
+        } else {
+            mode = FileUtils.S_IRWXU | FileUtils.S_IRWXG | FileUtils.S_IROTH;
+        }
+        FileUtils.setPermissions(file, mode, -1, -1);
     }
 
     private static String saveCompressedImage(byte[] image, String baseDir, String pkgName,
