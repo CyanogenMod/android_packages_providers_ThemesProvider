@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">Temaleverantör</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">Okänt</string>
   <string name="controls_preview_button_text">Normal</string>
 </resources>

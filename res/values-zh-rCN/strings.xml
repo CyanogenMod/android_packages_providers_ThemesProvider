@@ -17,6 +17,7 @@
 -->
 <resources>
   <string name="app_name">主题提供器</string>
+  <!-- For when an "legacy" icon pack does not have an app name -->
   <string name="unknown_app_name">未知</string>
   <string name="controls_preview_button_text">普通</string>
 </resources>
