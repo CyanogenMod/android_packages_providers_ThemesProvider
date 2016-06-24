@@ -15,36 +15,20 @@
  */
 package org.cyanogenmod.themes.provider.util;
 
+import android.app.DownloadManager;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.provider.MediaStore;
+import android.provider.Settings;
+
+import java.util.List;
 
 public class IconPreviewGenerator {
-    private static final ComponentName COMPONENT_DIALER =
-            new ComponentName("com.android.dialer", "com.android.dialer.DialtactsActivity");
-    private static final ComponentName COMPONENT_DIALERNEXT =
-            new ComponentName("com.cyngn.dialer", "com.android.dialer.DialtactsActivity");
-    private static final ComponentName COMPONENT_MESSAGING =
-            new ComponentName("com.android.messaging",
-                    "com.android.messaging.ui.conversationlist.ConversationListActivity");
-    private static final ComponentName COMPONENT_CAMERANEXT =
-            new ComponentName("com.cyngn.cameranext", "com.android.camera.CameraLauncher");
-    private static final ComponentName COMPONENT_CAMERA =
-            new ComponentName("com.android.camera2", "com.android.camera.CameraLauncher");
-    private static final ComponentName COMPONENT_BROWSER =
-            new ComponentName("com.android.browser", "com.android.browser.BrowserActivity");
-    private static final ComponentName COMPONENT_SETTINGS =
-            new ComponentName("com.android.settings", "com.android.settings.Settings");
-    private static final ComponentName COMPONENT_CALENDAR =
-            new ComponentName("com.android.calendar", "com.android.calendar.AllInOneActivity");
-    private static final ComponentName COMPONENT_GALERY =
-            new ComponentName("com.android.gallery3d", "com.android.gallery3d.app.GalleryActivity");
-
-    private static final String CAMERA_NEXT_PACKAGE = "com.cyngn.cameranext";
-    private static final String DIALER_NEXT_PACKAGE = "com.cyngn.dialer";
-
     private ComponentName[] mIconComponents;
 
     private Context mContext;
@@ -70,43 +54,86 @@ public class IconPreviewGenerator {
 
     private ComponentName[] getIconComponents(Context context) {
         if (mIconComponents == null || mIconComponents.length == 0) {
-            mIconComponents = new ComponentName[]{COMPONENT_DIALER, COMPONENT_MESSAGING,
-                    COMPONENT_CAMERA, COMPONENT_BROWSER};
+            mIconComponents = new ComponentName[3];
 
             PackageManager pm = context.getPackageManager();
 
-            // if device does not have telephony replace dialer and mms
             if (!pm.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
-                mIconComponents[0] = COMPONENT_CALENDAR;
-                mIconComponents[1] = COMPONENT_GALERY;
+                // Device does not have telephony so use settings and download manager icons
+                mIconComponents[0] = getSettingsComponentName(context);
+                mIconComponents[1] = getDownloadManagerComponentName(context);
             } else {
-                // decide on which dialer icon to use
-                try {
-                    if (pm.getPackageInfo(DIALER_NEXT_PACKAGE, 0) != null) {
-                        mIconComponents[0] = COMPONENT_DIALERNEXT;
-                    }
-                } catch (PackageManager.NameNotFoundException e) {
-                    // default to COMPONENT_DIALER
-                }
+                // Device has telephony so use dialer and mms icons
+                mIconComponents[0] = getDefaultDialerComponentName(context);
+                mIconComponents[1] = getDefaultMessagingComponentName(context);
             }
 
             if (!pm.hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
-                mIconComponents[2] = COMPONENT_SETTINGS;
+                // Device does not have a camera so use themes icon
+                mIconComponents[2] = getDefaultThemesComponentName(context);
             } else {
-                // decide on which camera icon to use
-                try {
-                    if (pm.getPackageInfo(CAMERA_NEXT_PACKAGE, 0) != null) {
-                        mIconComponents[2] = COMPONENT_CAMERANEXT;
-                    }
-                } catch (PackageManager.NameNotFoundException e) {
-                    // default to COMPONENT_CAMERA
-                }
+                // Device does have a camera so use default camera icon
+                mIconComponents[2] = getDefaultCameraComponentName(context);
             }
-
         }
 
         return mIconComponents;
     }
+
+    private ComponentName getDefaultComponentNameForIntent(Context context, Intent intent) {
+        final PackageManager pm = context.getPackageManager();
+        ComponentName cn = null;
+        ResolveInfo info = pm.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY);
+        if (info != null) {
+            // If we get the resolver activity, check for at least one possible match
+            if ("android".equals(info.activityInfo.packageName)) {
+                List<ResolveInfo> infos = pm.queryIntentActivities(intent, 0);
+                if (infos.size() > 0) {
+                    info = infos.get(0);
+                } else {
+                    return null;
+                }
+            }
+            cn = new ComponentName(info.activityInfo.packageName, info.activityInfo.name);
+        }
+
+        return cn;
+    }
+
+    private ComponentName getDefaultCameraComponentName(Context context) {
+        Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
+    private ComponentName getDefaultDialerComponentName(Context context) {
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.addCategory(Intent.CATEGORY_DEFAULT);
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
+    private ComponentName getDefaultMessagingComponentName(Context context) {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_APP_MESSAGING);
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
+    private ComponentName getDefaultThemesComponentName(Context context) {
+        Intent intent = new Intent(Intent.ACTION_MAIN);
+        intent.addCategory("cyanogenmod.intent.category.APP_THEMES");
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
+    private ComponentName getDownloadManagerComponentName(Context context) {
+        Intent intent = new Intent(DownloadManager.ACTION_VIEW_DOWNLOADS);
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
+    private ComponentName getSettingsComponentName(Context context) {
+        Intent intent = new Intent(Settings.ACTION_SETTINGS);
+        return getDefaultComponentNameForIntent(context, intent);
+    }
+
     public class IconItems {
         public Bitmap icon1;
         public Bitmap icon2;
